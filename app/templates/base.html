@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}{{ t('app.title') }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>[x-cloak]{display:none!important;}</style>
+  {% block head %}{% endblock %}
+  <script>
+    // Avoid flash of wrong theme: apply stored theme before paint.
+    (function () {
+      try {
+        var s = localStorage.getItem("stp-theme");
+        if (!s) {
+          s = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", s);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  {% if current_user %}
+  <nav class="nav">
+    <a href="/" class="nav-brand">💧 <span>{{ t('app.short') }}</span></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">{{ t('nav.dashboard') }}</a>
+      <a href="/entries" class="nav-link {% if '/entries' in request.url.path %}active{% endif %}">{{ t('nav.entries') }}</a>
+      <a href="/assets" class="nav-link {% if '/assets' in request.url.path %}active{% endif %}">{{ t('nav.assets') }}</a>
+      <a href="/map" class="nav-link {% if '/map' in request.url.path %}active{% endif %}">{{ t('nav.map') }}</a>
+      {% if current_user.is_admin %}
+      <a href="/admin/users" class="nav-link {% if '/admin/users' in request.url.path %}active{% endif %}">{{ t('nav.admin') }}</a>
+      <a href="/admin/backup" class="nav-link {% if '/admin/backup' in request.url.path %}active{% endif %}">{{ t('nav.backup') }}</a>
+      {% endif %}
+    </div>
+    <div class="nav-right">
+      <div class="lang-switch">
+        {% for l in supported_languages %}
+        <a href="/lang/{{ l }}" class="{% if l == lang %}active{% endif %}">{{ l|upper }}</a>
+        {% endfor %}
+      </div>
+      <button class="icon-btn" onclick="toggleTheme()" title="{{ t('theme.toggle') }}" aria-label="{{ t('theme.toggle') }}">◐</button>
+      <a href="/account" class="icon-btn" title="{{ t('nav.account') }}" aria-label="{{ t('nav.account') }}">⚙</a>
+      <a href="/logout" class="icon-btn" title="{{ t('nav.logout') }}" aria-label="{{ t('nav.logout') }}">⏻</a>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="{% block main_class %}container{% endblock %}">
+    {% if flash %}
+    <div class="flash flash-{{ flash.category }}">{{ t(flash.message) }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  {% if current_user %}<script src="/static/vendor/alpine.min.js" defer></script>{% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

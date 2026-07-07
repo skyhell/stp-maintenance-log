@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ t('dashboard.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('dashboard.title') }}</h1>
+  <a href="/entries/new" class="btn">＋ {{ t('entry.new') }}</a>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:16px;">
+  <div class="stat">
+    <div class="num">{{ total_assets }}</div>
+    <div class="label">{{ t('dashboard.total_assets') }}</div>
+  </div>
+  <div class="stat">
+    <div class="num">{{ total_entries }}</div>
+    <div class="label">{{ t('dashboard.total_entries') }}</div>
+  </div>
+  <div class="stat">
+    <div class="num" style="color:var(--danger)">{{ overdue|length }}</div>
+    <div class="label">{{ t('dashboard.overdue') }}</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>{{ t('dashboard.due_overview') }}</h2>
+    {% if overdue or due_soon %}
+      {% for a in overdue %}
+      <div class="entry-item flex" style="justify-content:space-between;">
+        <div>
+          <a href="/assets/{{ a.id }}/edit"><strong>{{ a.name }}</strong></a>
+          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date }}</div>
+        </div>
+        <span class="badge badge-overdue">{{ t('dashboard.overdue') }}</span>
+      </div>
+      {% endfor %}
+      {% for a in due_soon %}
+      <div class="entry-item flex" style="justify-content:space-between;">
+        <div>
+          <a href="/assets/{{ a.id }}/edit"><strong>{{ a.name }}</strong></a>
+          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date }}</div>
+        </div>
+        <span class="badge badge-due_soon">{{ t('dashboard.due_soon') }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">{{ t('dashboard.no_due') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>{{ t('dashboard.recent_entries') }}</h2>
+    {% if recent %}
+      {% for e in recent %}
+      <div class="entry-item">
+        <div class="entry-meta">
+          <span>{{ e.occurred_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          {% if e.activity %}· <strong style="color:var(--text)">{{ e.activity.name }}</strong>{% endif %}
+          {% if e.asset %}· {{ e.asset.name }}{% endif %}
+        </div>
+        {% if e.description %}<div class="text-sm">{{ e.description|truncate(120) }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="margin-top:12px;"><a href="/entries" class="btn-ghost btn btn-sm">{{ t('entry.title') }} →</a></div>
+    {% else %}
+      <p class="muted">{{ t('entry.no_entries') }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

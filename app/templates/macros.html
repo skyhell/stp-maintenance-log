@@ -1,0 +1,25 @@
+{# Reusable UI macros #}
+
+{% macro asset_type_badge(asset, t) %}
+  {% set cls = {'plant':'badge-plant','channel':'badge-channel','connection':'badge-connection'} %}
+  <span class="badge {{ cls.get(asset.type.value, 'badge-neutral') }}">
+    <span class="dot dot-{{ asset.type.value }}"></span>
+    {{ t('asset.type.' + asset.type.value) }}
+  </span>
+{% endmacro %}
+
+{% macro status_badge(status, t) %}
+  {% if status != 'none' %}
+  <span class="badge badge-{{ status }}">{{ t('asset.status.' + status) }}</span>
+  {% else %}
+  <span class="muted">{{ t('asset.status.none') }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro speech_button(target_id, t, lang) %}
+  <button type="button" class="speech-btn"
+          data-listening="{{ t('speech.listening') }}"
+          data-unsupported="{{ t('speech.unsupported') }}"
+          onclick="startSpeech('{{ target_id }}', this, '{{ 'de-DE' if lang == 'de' else 'en-US' }}')"
+          title="{{ t('speech.start') }}">🎤</button>
+{% endmacro %}
