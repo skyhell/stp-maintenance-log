@@ -55,6 +55,13 @@
     {% block content %}{% endblock %}
   </main>
 
+  <footer class="site-footer">
+    <strong>stp-maintenance-log</strong> v{{ app_version }}
+    <span class="sep">·</span>{{ t('app.title') }}
+    <span class="sep">·</span>
+    <a href="https://github.com/skyhell/stp-maintenance-log#readme" target="_blank" rel="noopener">{{ t('footer.docs') }}</a>
+  </footer>
+
   <script src="/static/js/app.js"></script>
   {% if current_user %}<script src="/static/vendor/alpine.min.js" defer></script>{% endif %}
   {% block scripts %}{% endblock %}
