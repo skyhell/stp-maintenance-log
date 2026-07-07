@@ -67,7 +67,28 @@ Open <http://127.0.0.1:8000> and log in with the bootstrap admin
 
 ---
 
-## 📦 Install on Proxmox (Debian/Ubuntu LXC or VM)
+## 📦 Install on Proxmox
+
+### Option A — one script on the Proxmox host (creates the container for you)
+
+Run this **on the Proxmox node** (as root). It creates a Debian 12 LXC named
+`stp-maintenance-log` and installs the app as a systemd service:
+
+```bash
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/skyhell/stp-maintenance-log/main/deploy/proxmox-create-lxc.sh)"
+```
+
+Override defaults via environment variables, e.g.:
+
+```bash
+CTID=150 CORES=2 RAM=1024 DISK=6 BRIDGE=vmbr0 STORAGE=local-lvm \
+  bash deploy/proxmox-create-lxc.sh
+```
+
+If your repository is **private**, pass a token so the container can clone it:
+`GITHUB_TOKEN=ghp_xxx bash deploy/proxmox-create-lxc.sh`.
+
+### Option B — inside an existing Debian/Ubuntu LXC or VM
 
 1. Create a Debian 12 / Ubuntu 22.04+ LXC container (1 vCPU, 512 MB RAM and
    2 GB disk are plenty) and start it.
