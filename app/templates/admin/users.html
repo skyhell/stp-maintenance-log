@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('admin.title') }}</h1>
+</div>
+
+<div class="card" style="margin-bottom:16px;" x-data="{ open: false }">
+  <div class="flex" style="justify-content:space-between;">
+    <h2 class="mb-0">{{ t('admin.new_user') }}</h2>
+    <button class="btn btn-sm" @click="open = !open" type="button">＋ {{ t('admin.new_user') }}</button>
+  </div>
+  <form method="post" action="/admin/users/new" x-show="open" x-cloak style="margin-top:16px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field-row">
+      <div class="field">
+        <label>{{ t('login.username') }}</label>
+        <input name="username" required>
+      </div>
+      <div class="field">
+        <label>Email <span class="muted">({{ t('common.optional') }})</span></label>
+        <input name="email" type="email">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>{{ t('login.password') }}</label>
+        <input name="password" type="password" minlength="8" required>
+      </div>
+      <div class="field">
+        <label>{{ t('admin.role') }}</label>
+        <select name="role">
+          {% for r in roles %}<option value="{{ r.value }}">{{ t('admin.role.' + r.value) }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn" type="submit">{{ t('common.create') }}</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>{{ t('login.username') }}</th>
+        <th>{{ t('admin.role') }}</th>
+        <th>{{ t('admin.active') }}</th>
+        <th>{{ t('admin.2fa') }}</th>
+        <th>{{ t('admin.created') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr x-data="{ edit: false }">
+        <td>
+          <strong>{{ u.username }}</strong>
+          {% if u.email %}<div class="muted text-sm">{{ u.email }}</div>{% endif %}
+        </td>
+        <td>{{ t('admin.role.' + u.role.value) }}</td>
+        <td>{% if u.is_active %}✅{% else %}⛔{% endif %}</td>
+        <td>{% if u.totp_enabled %}🔒{% else %}—{% endif %}</td>
+        <td class="muted text-sm">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+        <td style="text-align:right;">
+          <button class="btn-ghost btn btn-sm" @click="edit = !edit" type="button">{{ t('common.edit') }}</button>
+          {% if u.id != current_user.id %}
+          <form method="post" action="/admin/users/{{ u.id }}/delete" class="inline-form"
+                onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      <tr x-show="edit" x-cloak>
+        <td colspan="6" style="background:var(--bg-elev-2);">
+          <form method="post" action="/admin/users/{{ u.id }}/edit">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="field-row">
+              <div class="field">
+                <label>Email</label>
+                <input name="email" type="email" value="{{ u.email or '' }}">
+              </div>
+              <div class="field">
+                <label>{{ t('admin.role') }}</label>
+                <select name="role">
+                  {% for r in roles %}<option value="{{ r.value }}" {% if u.role == r %}selected{% endif %}>{{ t('admin.role.' + r.value) }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label>{{ t('account.new_password') }} <span class="muted">({{ t('common.optional') }})</span></label>
+                <input name="new_password" type="password" minlength="8">
+              </div>
+            </div>
+            <div class="field">
+              <label class="flex" style="gap:8px;"><input type="checkbox" name="is_active" style="width:auto;" {% if u.is_active %}checked{% endif %}> {{ t('admin.active') }}</label>
+            </div>
+            <button class="btn btn-sm" type="submit">{{ t('common.save') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

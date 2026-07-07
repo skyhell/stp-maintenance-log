@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ t('twofa.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('twofa.enable') }}</h1>
+  <a href="/account" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+</div>
+
+{% if error %}<div class="flash flash-error">{{ t(error) }}</div>{% endif %}
+
+<div class="card" style="max-width:520px;">
+  <p>{{ t('twofa.setup_step1') }}</p>
+  <div style="text-align:center; margin:16px 0;">
+    <img src="{{ qr }}" alt="QR code" width="220" height="220"
+         style="border-radius:12px; background:#fff; padding:10px;">
+  </div>
+
+  <p class="text-sm">{{ t('twofa.setup_step2') }}</p>
+  <p style="text-align:center; margin:8px 0 20px;">
+    <code style="font-size:1.05rem; letter-spacing:0.12em; user-select:all;">{{ secret }}</code>
+  </p>
+
+  <form method="post" action="/account/2fa/enable">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="code">{{ t('twofa.setup_step3') }}</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code"
+             required style="text-align:center; letter-spacing:0.3em; font-size:1.2rem;">
+    </div>
+    <button class="btn" type="submit">{{ t('twofa.enable') }}</button>
+  </form>
+</div>
+{% endblock %}

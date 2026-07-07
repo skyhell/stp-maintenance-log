@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('twofa.backup_title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ t('twofa.backup_title') }}</h1></div>
+
+<div class="card" style="max-width:520px;">
+  <div class="flash flash-success">✅ {{ t('twofa.enabled_ok') }}</div>
+  <p class="text-sm muted">{{ t('twofa.backup_hint') }}</p>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:18px 0;
+              font-family:ui-monospace,monospace; font-size:1.05rem;">
+    {% for c in codes %}
+    <div style="background:var(--bg-elev-2); border:1px solid var(--border);
+                border-radius:8px; padding:8px 12px; text-align:center; user-select:all;">{{ c }}</div>
+    {% endfor %}
+  </div>
+
+  <button class="btn btn-secondary btn-sm" type="button"
+          onclick="navigator.clipboard && navigator.clipboard.writeText({{ codes|tojson }}.join('\n'))">
+    ⧉ Copy
+  </button>
+  <a href="/account" class="btn">{{ t('twofa.done') }}</a>
+</div>
+{% endblock %}
