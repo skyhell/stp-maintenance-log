@@ -39,11 +39,17 @@ no external CDN, no API keys.
 
 ## 📸 Screenshots
 
-> _Placeholders — replace with your own screenshots in `docs/screenshots/`._
+**Dashboard** — due/overdue maintenance and recent activity at a glance:
 
-| Dashboard | Maintenance entry | Map |
-|-----------|-------------------|-----|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Entry](docs/screenshots/entry.png) | ![Map](docs/screenshots/map.png) |
+![Dashboard](docs/screenshots/dashboard.png)
+
+| Maintenance history | Map view |
+|---------------------|----------|
+| ![History](docs/screenshots/entry.png) | ![Map](docs/screenshots/map.png) |
+
+| Asset management | Dark mode |
+|------------------|-----------|
+| ![Assets](docs/screenshots/assets.png) | ![Dark mode](docs/screenshots/dashboard-dark.png) |
 
 ---
 
