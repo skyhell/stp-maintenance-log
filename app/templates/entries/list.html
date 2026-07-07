@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ t('entry.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('entry.title') }}</h1>
+  <a href="/entries/new" class="btn">＋ {{ t('entry.new') }}</a>
+</div>
+
+<form method="get" action="/entries" class="card" style="margin-bottom:16px;">
+  <div class="field-row">
+    <div class="field">
+      <label>{{ t('entry.filter_asset') }}</label>
+      <select name="asset_id">
+        <option value="">{{ t('common.all') }}</option>
+        {% for a in assets %}
+        <option value="{{ a.id }}" {% if filters.asset_id == a.id %}selected{% endif %}>{{ a.name }} ({{ a.uid }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>{{ t('entry.filter_from') }}</label>
+      <input type="date" name="date_from" value="{{ filters.date_from }}">
+    </div>
+    <div class="field">
+      <label>{{ t('entry.filter_to') }}</label>
+      <input type="date" name="date_to" value="{{ filters.date_to }}">
+    </div>
+    <div class="field">
+      <label>{{ t('entry.filter_text') }}</label>
+      <input type="search" name="q" value="{{ filters.q }}" placeholder="{{ t('common.search') }}">
+    </div>
+  </div>
+  <div class="flex flex-wrap">
+    <button class="btn btn-sm" type="submit">{{ t('common.filter') }}</button>
+    <a href="/entries" class="btn btn-secondary btn-sm">{{ t('common.reset') }}</a>
+    <span class="spacer"></span>
+    <a class="btn btn-secondary btn-sm"
+       href="/entries/export.pdf?asset_id={{ filters.asset_id or '' }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}">
+      ⬇ PDF
+    </a>
+  </div>
+</form>
+
+<div class="card">
+  {% if entries %}
+    {% for e in entries %}
+    <div class="entry-item">
+      <div class="entry-meta">
+        <span>🕒 {{ e.occurred_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        <span>👤 {{ e.user.username if e.user else '—' }}</span>
+        {% if e.activity %}<strong style="color:var(--text)">{{ e.activity.name }}</strong>{% endif %}
+        {% if e.asset %}<span>· {{ m.asset_type_badge(e.asset, t) }} {{ e.asset.name }}</span>{% endif %}
+        <span class="spacer"></span>
+        <a href="/entries/{{ e.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+        <form method="post" action="/entries/{{ e.id }}/delete" class="inline-form"
+              onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+        </form>
+      </div>
+      {% if e.description %}<div>{{ e.description }}</div>{% endif %}
+      {% if e.notes %}<div class="text-sm muted" style="margin-top:4px;">📝 {{ e.notes }}</div>{% endif %}
+      {% if e.comment %}<div class="text-sm muted" style="margin-top:4px;">💬 {{ e.comment }}</div>{% endif %}
+      {% if e.images %}
+      <div class="entry-thumbs">
+        {% for img in e.images %}
+        <a href="/media/{{ img.filename }}" target="_blank"><img src="/media/{{ img.filename }}" alt="{{ img.orig_name }}" loading="lazy"></a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty"><span class="emoji">📋</span>{{ t('entry.no_entries') }}</div>
+  {% endif %}
+</div>
+{% endblock %}

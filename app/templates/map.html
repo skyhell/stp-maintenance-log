@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ t('map.title') }} · {{ t('app.short') }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/leaflet.css">
+{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ t('map.title') }}</h1></div>
+
+<div id="map"></div>
+
+<div class="map-legend">
+  <strong class="text-sm">{{ t('map.legend') }}:</strong>
+  <span><span class="dot dot-plant"></span> {{ t('asset.type.plant') }}</span>
+  <span><span class="dot dot-channel"></span> {{ t('asset.type.channel') }}</span>
+  <span><span class="dot dot-connection"></span> {{ t('asset.type.connection') }}</span>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/leaflet.js"></script>
+<script>
+(function () {
+  var colors = { plant: "#0071e3", channel: "#ff9500", connection: "#34c759" };
+  var typeLabels = {
+    plant: {{ t('asset.type.plant')|tojson }},
+    channel: {{ t('asset.type.channel')|tojson }},
+    connection: {{ t('asset.type.connection')|tojson }}
+  };
+  var nextLabel = {{ t('asset.next_maintenance')|tojson }};
+
+  var map = L.map("map").setView([48.2082, 16.3738], 12); // default: Vienna
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  fetch("/api/assets")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var bounds = [];
+      data.assets.forEach(function (a) {
+        var marker = L.circleMarker([a.lat, a.lon], {
+          radius: 9,
+          color: "#fff",
+          weight: 2,
+          fillColor: colors[a.type] || "#8e8e93",
+          fillOpacity: 1
+        }).addTo(map);
+        var html =
+          '<strong>' + escapeHtml(a.name) + '</strong><br>' +
+          '<span style="color:#888">' + escapeHtml(a.uid) + ' · ' +
+          (typeLabels[a.type] || a.type) + '</span>';
+        if (a.address) html += '<br>' + escapeHtml(a.address);
+        if (a.next_maintenance) html += '<br>' + nextLabel + ': ' + a.next_maintenance;
+        html += '<br><a href="/assets/' + a.id + '/edit">✎</a>';
+        marker.bindPopup(html);
+        bounds.push([a.lat, a.lon]);
+      });
+      if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+    });
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+})();
+</script>
+{% endblock %}

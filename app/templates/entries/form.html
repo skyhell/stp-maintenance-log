@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ t('entry.new') if not entry else t('entry.edit') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('entry.new') if not entry else t('entry.edit') }}</h1>
+  <a href="/entries" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+</div>
+
+<form method="post"
+      action="{{ '/entries/' ~ entry.id ~ '/edit' if entry else '/entries/new' }}"
+      enctype="multipart/form-data" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="field-row">
+    <div class="field">
+      <label for="occurred_at">{{ t('entry.datetime') }}</label>
+      <input type="datetime-local" id="occurred_at" name="occurred_at" value="{{ now }}">
+    </div>
+    <div class="field">
+      <label for="asset_id">{{ t('entry.asset') }}</label>
+      <select id="asset_id" name="asset_id">
+        <option value="">{{ t('common.none') }}</option>
+        {% for a in assets %}
+        <option value="{{ a.id }}" {% if entry and entry.asset_id == a.id %}selected{% endif %}>
+          {{ a.name }} ({{ a.uid }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="activity">{{ t('entry.activity') }}</label>
+    <input id="activity" name="activity" list="activity-list" autocomplete="off"
+           value="{{ entry.activity.name if entry and entry.activity else '' }}">
+    <datalist id="activity-list">
+      {% for act in activities %}<option value="{{ act.name }}">{% endfor %}
+    </datalist>
+    <div class="hint">{{ t('entry.activity_hint') }}</div>
+  </div>
+
+  <div class="field">
+    <label for="description">{{ t('entry.description') }}</label>
+    <div class="input-with-btn">
+      <textarea id="description" name="description">{{ entry.description or '' if entry else '' }}</textarea>
+      {{ m.speech_button('description', t, lang) }}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="notes">{{ t('entry.notes') }}</label>
+    <div class="input-with-btn">
+      <textarea id="notes" name="notes">{{ entry.notes or '' if entry else '' }}</textarea>
+      {{ m.speech_button('notes', t, lang) }}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="comment">{{ t('entry.comment') }}</label>
+    <div class="input-with-btn">
+      <textarea id="comment" name="comment">{{ entry.comment or '' if entry else '' }}</textarea>
+      {{ m.speech_button('comment', t, lang) }}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="images">{{ t('entry.add_images') }}</label>
+    <input type="file" id="images" name="images" accept="image/*" multiple capture="environment">
+  </div>
+
+  {% if entry and entry.images %}
+  <div class="field">
+    <label>{{ t('entry.images') }}</label>
+    <div class="entry-thumbs">
+      {% for img in entry.images %}
+      <div style="text-align:center;">
+        <a href="/media/{{ img.filename }}" target="_blank"><img src="/media/{{ img.filename }}" alt=""></a>
+        <form method="post" action="/entries/image/{{ img.id }}/delete" class="inline-form"
+              onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="flex" style="margin-top:8px;">
+    <button class="btn" type="submit">{{ t('common.save') }}</button>
+    <a href="/entries" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+  </div>
+</form>
+{% endblock %}

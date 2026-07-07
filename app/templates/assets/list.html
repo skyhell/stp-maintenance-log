@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ t('asset.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('asset.title') }}</h1>
+  <a href="/assets/new" class="btn">＋ {{ t('asset.new') }}</a>
+</div>
+
+<div class="flex flex-wrap" style="margin-bottom:16px;">
+  <a href="/assets" class="btn btn-sm {{ 'btn-secondary' if filter_type else '' }}">{{ t('common.all') }}</a>
+  {% for ty in asset_types %}
+  <a href="/assets?type={{ ty.value }}"
+     class="btn btn-sm {{ '' if filter_type == ty.value else 'btn-secondary' }}">
+    {{ t('asset.type.' + ty.value) }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>{{ t('asset.uid') }}</th>
+        <th>{{ t('asset.name') }}</th>
+        <th>{{ t('asset.type') }}</th>
+        <th>{{ t('asset.next_maintenance') }}</th>
+        <th>{{ t('asset.entries_count') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assets %}
+      {% set status = a.maintenance_status(settings.reminder_due_soon_days) %}
+      <tr>
+        <td><code>{{ a.uid }}</code></td>
+        <td><a href="/assets/{{ a.id }}/edit"><strong>{{ a.name }}</strong></a></td>
+        <td>{{ m.asset_type_badge(a, t) }}</td>
+        <td>
+          {% if a.next_maintenance_date %}
+          {{ a.next_maintenance_date }} {{ m.status_badge(status, t) }}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td>{{ counts.get(a.id, 0) }}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <a href="/assets/{{ a.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+          <form method="post" action="/assets/{{ a.id }}/delete" class="inline-form"
+                onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6"><div class="empty"><span class="emoji">🏭</span>{{ t('asset.no_assets') }}</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

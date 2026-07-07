@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ t('asset.new') if not asset else t('asset.edit') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('asset.new') if not asset else t('asset.edit') }}</h1>
+  <a href="/assets" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+</div>
+
+{% if error %}<div class="flash flash-error">{{ t(error) }}</div>{% endif %}
+
+<form method="post"
+      action="{{ '/assets/' ~ asset.id ~ '/edit' if asset else '/assets/new' }}"
+      class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="field-row">
+    <div class="field">
+      <label for="uid">{{ t('asset.uid') }} <span class="muted">({{ t('common.required') }})</span></label>
+      <input id="uid" name="uid" required value="{{ asset.uid if asset else (form.uid if form else '') }}">
+    </div>
+    <div class="field">
+      <label for="name">{{ t('asset.name') }} <span class="muted">({{ t('common.required') }})</span></label>
+      <input id="name" name="name" required value="{{ asset.name if asset else (form.name if form else '') }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="type">{{ t('asset.type') }}</label>
+    <select id="type" name="type">
+      {% for ty in asset_types %}
+      <option value="{{ ty.value }}" {% if asset and asset.type == ty %}selected{% endif %}>
+        {{ t('asset.type.' + ty.value) }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="install_date">{{ t('asset.install_date') }}</label>
+      <input type="date" id="install_date" name="install_date"
+             value="{{ asset.install_date if asset and asset.install_date else '' }}">
+    </div>
+    <div class="field">
+      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}</label>
+      <input type="date" id="next_maintenance_date" name="next_maintenance_date"
+             value="{{ asset.next_maintenance_date if asset and asset.next_maintenance_date else '' }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="address">{{ t('asset.address') }}</label>
+    <input id="address" name="address" value="{{ asset.address if asset and asset.address else '' }}">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="latitude">{{ t('asset.latitude') }}</label>
+      <input id="latitude" name="latitude" inputmode="decimal"
+             value="{{ asset.latitude if asset and asset.latitude is not none else '' }}">
+    </div>
+    <div class="field">
+      <label for="longitude">{{ t('asset.longitude') }}</label>
+      <input id="longitude" name="longitude" inputmode="decimal"
+             value="{{ asset.longitude if asset and asset.longitude is not none else '' }}">
+    </div>
+  </div>
+  <div class="field">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)">📍 {{ t('asset.use_gps') }}</button>
+    <div class="hint">{{ t('asset.use_gps') }} — HTTPS erforderlich / required for GPS.</div>
+  </div>
+
+  <div class="field">
+    <label for="comment">{{ t('asset.comment') }}</label>
+    <textarea id="comment" name="comment">{{ asset.comment or '' if asset else '' }}</textarea>
+  </div>
+
+  <div class="flex" style="margin-top:8px;">
+    <button class="btn" type="submit">{{ t('common.save') }}</button>
+    <a href="/assets" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+  </div>
+</form>
+{% endblock %}
