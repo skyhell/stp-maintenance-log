@@ -27,7 +27,7 @@ fi
 log "Installing system dependencies ..."
 apt-get update -qq
 apt-get install -y --no-install-recommends \
-  python3 python3-venv python3-pip ca-certificates
+  python3 python3-venv python3-pip ca-certificates rsync git curl
 
 log "Creating service user '${APP_USER}' ..."
 if ! id -u "${APP_USER}" >/dev/null 2>&1; then

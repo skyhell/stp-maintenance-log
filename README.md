@@ -138,6 +138,22 @@ Data (SQLite DB, uploads, backups) is persisted in the `./data` volume.
 
 ---
 
+## 🔄 Updating
+
+To update an existing systemd installation to the latest version, run on the
+host/container where it is installed:
+
+```bash
+sudo bash /opt/stp-maintenance/deploy/update.sh
+```
+
+It pulls the latest code, updates dependencies and restarts the service.
+**Your data (`data/`), config (`.env`) and virtualenv are preserved**, and a
+snapshot of the SQLite database is written to `data/backups/` before restart.
+For a private repo, pass a token: `GITHUB_TOKEN=ghp_xxx sudo -E bash …/update.sh`.
+
+For Docker: `git pull && docker compose up -d --build`.
+
 ## ⚙️ Configuration
 
 All configuration lives in `.env` (see [`.env.example`](.env.example)):
