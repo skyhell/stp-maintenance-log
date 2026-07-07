@@ -8,7 +8,7 @@
 #     bash proxmox-create-lxc.sh
 #
 #  Everything is configurable via environment variables, e.g.:
-#     CTID=150 HOSTNAME=stp-maintenance-log CORES=2 RAM=1024 DISK=6 \
+#     CTID=150 CT_HOSTNAME=stp-maintenance-log CORES=2 RAM=1024 DISK=6 \
 #     BRIDGE=vmbr0 STORAGE=local-lvm bash proxmox-create-lxc.sh
 #
 #  Private GitHub repo? Provide a token so the container can clone it:
@@ -18,7 +18,9 @@ set -euo pipefail
 
 # ---------------- Configuration (override via env) ----------------
 CTID="${CTID:-}"                       # empty -> auto-pick next free VMID
-HOSTNAME="${HOSTNAME:-stp-maintenance-log}"
+# NOTE: do NOT name this HOSTNAME — that is a reserved shell variable already
+# set to the Proxmox node's name (usually "pve"), which would override the default.
+CT_HOSTNAME="${CT_HOSTNAME:-stp-maintenance-log}"
 CORES="${CORES:-1}"
 RAM="${RAM:-512}"                      # MB
 DISK="${DISK:-6}"                      # GB
@@ -76,9 +78,9 @@ fi
 TEMPLATE_REF="${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE_NAME}"
 
 # ---------------- Create the container ----------------
-log "Creating LXC ${CTID} (${HOSTNAME}: ${CORES} vCPU, ${RAM}MB RAM, ${DISK}GB disk) ..."
+log "Creating LXC ${CTID} (${CT_HOSTNAME}: ${CORES} vCPU, ${RAM}MB RAM, ${DISK}GB disk) ..."
 pct create "$CTID" "$TEMPLATE_REF" \
-  --hostname "$HOSTNAME" \
+  --hostname "$CT_HOSTNAME" \
   --cores "$CORES" \
   --memory "$RAM" \
   --swap "$RAM" \
@@ -129,7 +131,7 @@ pct exec "$CTID" -- bash -c "cd /root/app-src && git remote set-url origin '${RE
 # ---------------- Summary ----------------
 IP="$(pct exec "$CTID" -- bash -c "hostname -I | awk '{print \$1}'" 2>/dev/null || echo '')"
 echo
-ok "Done! stp-maintenance-log is installed in LXC ${CTID} (${HOSTNAME})."
+ok "Done! stp-maintenance-log is installed in LXC ${CTID} (${CT_HOSTNAME})."
 echo "  ----------------------------------------------------------------"
 echo "  Web UI:        http://${IP:-<container-ip>}:${START_PORT}"
 echo "  App login:     admin / changeme    (CHANGE THIS IMMEDIATELY)"
