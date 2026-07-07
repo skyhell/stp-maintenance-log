@@ -5,7 +5,7 @@ Thanks for your interest in improving the Sewage Treatment Plant Maintenance Log
 ## Development setup
 
 ```bash
-git clone https://github.com/<your-user>/stp-maintenance-log.git
+git clone https://github.com/skyhell/stp-maintenance-log.git
 cd stp-maintenance-log
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate

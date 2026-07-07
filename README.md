@@ -52,7 +52,7 @@ no external CDN, no API keys.
 Requires Python 3.11+.
 
 ```bash
-git clone https://github.com/<your-user>/stp-maintenance-log.git
+git clone https://github.com/skyhell/stp-maintenance-log.git
 cd stp-maintenance-log
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
@@ -96,7 +96,7 @@ If your repository is **private**, pass a token so the container can clone it:
 
    ```bash
    apt update && apt install -y git
-   git clone https://github.com/<your-user>/stp-maintenance-log.git
+   git clone https://github.com/skyhell/stp-maintenance-log.git
    cd stp-maintenance-log
    ```
 
@@ -221,7 +221,7 @@ responsives Apple-Stil-Design.
 
 ```bash
 apt update && apt install -y git
-git clone https://github.com/<dein-user>/stp-maintenance-log.git
+git clone https://github.com/skyhell/stp-maintenance-log.git
 cd stp-maintenance-log
 sudo bash deploy/install.sh
 ```
