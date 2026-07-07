@@ -1,0 +1,23 @@
+[Unit]
+Description=Sewage Treatment Plant Maintenance Log (FastAPI/Uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=stp
+Group=stp
+WorkingDirectory=/opt/stp-maintenance
+EnvironmentFile=/opt/stp-maintenance/.env
+ExecStart=/opt/stp-maintenance/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+# --- Hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/stp-maintenance/data
+
+[Install]
+WantedBy=multi-user.target
