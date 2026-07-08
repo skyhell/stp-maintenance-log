@@ -11,7 +11,7 @@
 <div class="map-legend">
   <strong class="text-sm">{{ t('map.legend') }}:</strong>
   <span><span class="dot dot-plant"></span> {{ t('asset.type.plant') }}</span>
-  <span><span class="dot dot-channel"></span> {{ t('asset.type.channel') }}</span>
+  <span><span class="dot dot-shaft"></span> {{ t('asset.type.shaft') }}</span>
   <span><span class="dot dot-connection"></span> {{ t('asset.type.connection') }}</span>
 </div>
 {% endblock %}
@@ -19,10 +19,10 @@
 <script src="/static/vendor/leaflet.js"></script>
 <script>
 (function () {
-  var colors = { plant: "#0071e3", channel: "#ff9500", connection: "#34c759" };
+  var colors = { plant: "#0071e3", shaft: "#ff9500", connection: "#34c759" };
   var typeLabels = {
     plant: {{ t('asset.type.plant')|tojson }},
-    channel: {{ t('asset.type.channel')|tojson }},
+    shaft: {{ t('asset.type.shaft')|tojson }},
     connection: {{ t('asset.type.connection')|tojson }}
   };
   var nextLabel = {{ t('asset.next_maintenance')|tojson }};
@@ -56,7 +56,12 @@
         bounds.push([a.lat, a.lon]);
       });
       if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      // Ensure Leaflet uses the final container size (robust if it was
+      // initialised before the layout settled).
+      setTimeout(function () { map.invalidateSize(); }, 200);
     });
+
+  window.addEventListener("load", function () { map.invalidateSize(); });
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, function (c) {

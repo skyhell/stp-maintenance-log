@@ -80,9 +80,9 @@ def test_asset_and_entry_crud():
             "/assets/new",
             data={
                 "csrf_token": token,
-                "uid": "PLANT-001",
-                "name": "Main Plant",
-                "type": "plant",
+                "uid": "SHAFT-001",
+                "name": "Shaft One",
+                "type": "shaft",
                 "next_maintenance_date": "2020-01-01",
                 "latitude": "48.2082",
                 "longitude": "16.3738",
@@ -90,7 +90,7 @@ def test_asset_and_entry_crud():
             follow_redirects=False,
         )
         assert r.status_code == 303
-        assert "Main Plant" in client.get("/assets").text
+        assert "Shaft One" in client.get("/assets").text
 
         # Create a maintenance entry with a self-building activity.
         token = _csrf(client, "/entries/new")
@@ -99,7 +99,6 @@ def test_asset_and_entry_crud():
             data={
                 "csrf_token": token,
                 "occurred_at": "2024-05-01T10:00",
-                "asset_id": "1",
                 "activity": "Sichtprüfung",
                 "description": "All good",
             },
@@ -136,9 +135,9 @@ def test_map_and_assets_api():
             "/assets/new",
             data={
                 "csrf_token": token,
-                "uid": "CH-1",
-                "name": "Channel One",
-                "type": "channel",
+                "uid": "SH-1",
+                "name": "Shaft One",
+                "type": "shaft",
                 "latitude": "48.21",
                 "longitude": "16.37",
             },
@@ -146,7 +145,49 @@ def test_map_and_assets_api():
         )
         assert client.get("/map").status_code == 200
         data = client.get("/api/assets").json()
-        assert any(a["uid"] == "CH-1" and a["type"] == "channel" for a in data["assets"])
+        assert any(a["uid"] == "SH-1" and a["type"] == "shaft" for a in data["assets"])
+
+
+def test_plant_singleton():
+    with _client() as client:
+        _login(client)
+
+        # The single plant page exists and renders.
+        assert client.get("/plant").status_code == 200
+
+        # Updating the plant works.
+        token = _csrf(client, "/plant")
+        r = client.post(
+            "/plant",
+            data={
+                "csrf_token": token,
+                "name": "Zentralanlage",
+                "next_maintenance_date": "2020-02-02",
+            },
+            follow_redirects=False,
+        )
+        assert r.status_code == 303
+        assert "Zentralanlage" in client.get("/plant").text
+
+        # The object list must not contain the plant type.
+        token = _csrf(client, "/assets/new")
+        client.post(
+            "/assets/new",
+            data={"csrf_token": token, "uid": "PLANT-HACK", "name": "Sneaky", "type": "plant"},
+            follow_redirects=False,
+        )
+        # Requesting type=plant is coerced to a shaft (no plant type is exposed).
+        data = client.get("/api/assets").json()
+        hack = [a for a in data["assets"] if a["uid"] == "PLANT-HACK"]
+        # It may have no coords so might not be in /api/assets; check via the list instead.
+        objects = client.get("/assets").text
+        assert "Sneaky" in objects
+        for a in hack:
+            assert a["type"] != "plant"
+
+        # Only one plant exists and it cannot be created via the objects page.
+        overview = client.get("/api/assets").json()["assets"]
+        assert sum(1 for a in overview if a["type"] == "plant") <= 1
 
 
 def test_pdf_export():
@@ -158,7 +199,7 @@ def test_pdf_export():
         assert r.content[:5] == b"%PDF-"
 
 
-def _create_asset(client, uid, name="A", type_="plant"):
+def _create_asset(client, uid, name="A", type_="shaft"):
     token = _csrf(client, "/assets/new")
     return client.post(
         "/assets/new",

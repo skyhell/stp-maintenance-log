@@ -1,4 +1,8 @@
-"""Asset management: create, edit, delete plants / channels / connections."""
+"""Object management: create, edit, delete shafts (Schacht) and connections.
+
+The single treatment plant ('Anlage') is a singleton managed separately in
+``routers/plant.py`` and is intentionally not editable here.
+"""
 
 from __future__ import annotations
 
@@ -10,13 +14,20 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.asset import Asset, AssetType
+from app.models.asset import OBJECT_TYPES, Asset, AssetType
 from app.models.maintenance import MaintenanceEntry
 from app.models.user import User
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/assets")
+
+_OBJECT_TYPE_VALUES = {t.value for t in OBJECT_TYPES}
+
+
+def _coerce_object_type(value: str) -> AssetType:
+    """Only shaft/connection are valid here; anything else falls back to shaft."""
+    return AssetType(value) if value in _OBJECT_TYPE_VALUES else AssetType.shaft
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -44,8 +55,13 @@ def list_assets(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    stmt = select(Asset).order_by(Asset.next_maintenance_date.asc().nulls_last())
-    if type in (t.value for t in AssetType):
+    # Only managed objects (shaft/connection); the plant lives on its own page.
+    stmt = (
+        select(Asset)
+        .where(Asset.type.in_(OBJECT_TYPES))
+        .order_by(Asset.next_maintenance_date.asc().nulls_last())
+    )
+    if type in _OBJECT_TYPE_VALUES:
         stmt = stmt.where(Asset.type == AssetType(type))
     assets = list(db.scalars(stmt).all())
 
@@ -64,7 +80,7 @@ def list_assets(
             "assets": assets,
             "counts": counts,
             "filter_type": type or "",
-            "asset_types": list(AssetType),
+            "asset_types": list(OBJECT_TYPES),
         },
         db=db,
         user=user,
@@ -80,7 +96,7 @@ def new_asset(
     return render(
         request,
         "assets/form.html",
-        {"asset": None, "asset_types": list(AssetType)},
+        {"asset": None, "asset_types": list(OBJECT_TYPES)},
         db=db,
         user=user,
     )
@@ -111,7 +127,7 @@ def create_asset(
             "assets/form.html",
             {
                 "asset": None,
-                "asset_types": list(AssetType),
+                "asset_types": list(OBJECT_TYPES),
                 "error": "asset.uid",
                 "form": {"uid": uid, "name": name},
             },
@@ -123,7 +139,7 @@ def create_asset(
     asset = Asset(
         uid=uid,
         name=name.strip(),
-        type=AssetType(type) if type in (t.value for t in AssetType) else AssetType.plant,
+        type=_coerce_object_type(type),
         install_date=_parse_date(install_date),
         next_maintenance_date=_parse_date(next_maintenance_date),
         address=address.strip() or None,
@@ -147,10 +163,13 @@ def edit_asset(
     asset = db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    if asset.type == AssetType.plant:
+        # The plant is edited on its dedicated page.
+        return RedirectResponse("/plant", status_code=303)
     return render(
         request,
         "assets/form.html",
-        {"asset": asset, "asset_types": list(AssetType)},
+        {"asset": asset, "asset_types": list(OBJECT_TYPES)},
         db=db,
         user=user,
     )
@@ -177,6 +196,8 @@ def update_asset(
     asset = db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    if asset.type == AssetType.plant:
+        return RedirectResponse("/plant", status_code=303)
 
     uid = uid.strip()
     clash = db.scalar(select(Asset).where(Asset.uid == uid, Asset.id != asset_id))
@@ -184,7 +205,7 @@ def update_asset(
         return render(
             request,
             "assets/form.html",
-            {"asset": asset, "asset_types": list(AssetType), "error": "asset.uid"},
+            {"asset": asset, "asset_types": list(OBJECT_TYPES), "error": "asset.uid"},
             db=db,
             user=user,
             status_code=400,
@@ -192,7 +213,7 @@ def update_asset(
 
     asset.uid = uid
     asset.name = name.strip()
-    asset.type = AssetType(type) if type in (t.value for t in AssetType) else asset.type
+    asset.type = _coerce_object_type(type)
     asset.install_date = _parse_date(install_date)
     asset.next_maintenance_date = _parse_date(next_maintenance_date)
     asset.address = address.strip() or None
@@ -214,6 +235,10 @@ def delete_asset(
 ):
     verify_csrf(request, csrf_token)
     asset = db.get(Asset, asset_id)
+    if asset and asset.type == AssetType.plant:
+        # The singleton plant cannot be deleted.
+        flash(request, "error.forbidden", "error")
+        return RedirectResponse("/assets", status_code=303)
     if asset:
         # Detach entries from the asset rather than deleting the history.
         for entry in list(asset.entries):

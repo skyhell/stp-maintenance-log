@@ -28,6 +28,7 @@
     <div class="nav-links">
       <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">{{ t('nav.dashboard') }}</a>
       <a href="/entries" class="nav-link {% if '/entries' in request.url.path %}active{% endif %}">{{ t('nav.entries') }}</a>
+      <a href="/plant" class="nav-link {% if '/plant' in request.url.path %}active{% endif %}">{{ t('nav.plant') }}</a>
       <a href="/assets" class="nav-link {% if '/assets' in request.url.path %}active{% endif %}">{{ t('nav.assets') }}</a>
       <a href="/map" class="nav-link {% if '/map' in request.url.path %}active{% endif %}">{{ t('nav.map') }}</a>
       {% if current_user.is_admin %}

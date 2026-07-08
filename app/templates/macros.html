@@ -1,7 +1,7 @@
 {# Reusable UI macros #}
 
 {% macro asset_type_badge(asset, t) %}
-  {% set cls = {'plant':'badge-plant','channel':'badge-channel','connection':'badge-connection'} %}
+  {% set cls = {'plant':'badge-plant','shaft':'badge-shaft','connection':'badge-connection'} %}
   <span class="badge {{ cls.get(asset.type.value, 'badge-neutral') }}">
     <span class="dot dot-{{ asset.type.value }}"></span>
     {{ t('asset.type.' + asset.type.value) }}

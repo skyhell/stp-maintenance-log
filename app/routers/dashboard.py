@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.models.asset import Asset
+from app.models.asset import OBJECT_TYPES, Asset
 from app.models.maintenance import MaintenanceEntry
 from app.models.user import User
 from app.services.security import get_current_user
@@ -54,7 +54,9 @@ def dashboard(
         ).all()
     )
 
-    total_assets = db.scalar(select(func.count(Asset.id))) or 0
+    total_assets = (
+        db.scalar(select(func.count(Asset.id)).where(Asset.type.in_(OBJECT_TYPES))) or 0
+    )
     total_entries = db.scalar(select(func.count(MaintenanceEntry.id))) or 0
 
     return render(

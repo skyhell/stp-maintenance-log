@@ -76,7 +76,10 @@ body {
   display: flex;
   flex-direction: column;
 }
-body > main { flex: 1 0 auto; }
+/* width:100% is required: in a flex column, the container's `margin:0 auto`
+   uses auto cross-axis margins which otherwise prevent it from stretching,
+   collapsing content-light pages (e.g. the map) to their intrinsic width. */
+body > main { flex: 1 0 auto; width: 100%; }
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -245,7 +248,7 @@ tbody tr:hover { background: var(--bg-elev-2); }
   font-size: 0.76rem; font-weight: 500;
 }
 .badge-plant { background: var(--accent-soft); color: var(--accent); }
-.badge-channel { background: var(--warning-soft); color: var(--warning); }
+.badge-shaft { background: var(--warning-soft); color: var(--warning); }
 .badge-connection { background: var(--success-soft); color: var(--success); }
 .badge-neutral { background: var(--bg-elev-2); color: var(--text-muted); }
 .badge-overdue { background: var(--danger-soft); color: var(--danger); }
@@ -254,7 +257,7 @@ tbody tr:hover { background: var(--bg-elev-2); }
 
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .dot-plant { background: var(--accent); }
-.dot-channel { background: var(--warning); }
+.dot-shaft { background: var(--warning); }
 .dot-connection { background: var(--success); }
 
 /* ---------- Flash / alerts ---------- */

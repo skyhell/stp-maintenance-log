@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ t('plant.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('plant.title') }}</h1>
+  {% set status = plant.maintenance_status(settings.reminder_due_soon_days) %}
+  {{ m.status_badge(status, t) }}
+</div>
+<p class="muted text-sm" style="margin-top:-8px; margin-bottom:18px;">{{ t('plant.subtitle') }}</p>
+
+<form method="post" action="/plant" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="field">
+    <label for="name">{{ t('asset.name') }}</label>
+    <input id="name" name="name" required value="{{ plant.name }}">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="install_date">{{ t('asset.install_date') }}</label>
+      <input type="date" id="install_date" name="install_date"
+             value="{{ plant.install_date if plant.install_date else '' }}">
+    </div>
+    <div class="field">
+      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}</label>
+      <input type="date" id="next_maintenance_date" name="next_maintenance_date"
+             value="{{ plant.next_maintenance_date if plant.next_maintenance_date else '' }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="address">{{ t('asset.address') }}</label>
+    <input id="address" name="address" value="{{ plant.address or '' }}">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="latitude">{{ t('asset.latitude') }}</label>
+      <input id="latitude" name="latitude" inputmode="decimal"
+             value="{{ plant.latitude if plant.latitude is not none else '' }}">
+    </div>
+    <div class="field">
+      <label for="longitude">{{ t('asset.longitude') }}</label>
+      <input id="longitude" name="longitude" inputmode="decimal"
+             value="{{ plant.longitude if plant.longitude is not none else '' }}">
+    </div>
+  </div>
+  <div class="field">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)">📍 {{ t('asset.use_gps') }}</button>
+  </div>
+
+  <div class="field">
+    <label for="comment">{{ t('asset.comment') }}</label>
+    <textarea id="comment" name="comment">{{ plant.comment or '' }}</textarea>
+  </div>
+
+  <button class="btn" type="submit">{{ t('common.save') }}</button>
+</form>
+{% endblock %}

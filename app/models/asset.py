@@ -12,9 +12,14 @@ from app.database import Base
 
 
 class AssetType(str, enum.Enum):
-    plant = "plant"          # Anlage
-    channel = "channel"      # Kanal
+    plant = "plant"          # Anlage — the single treatment-plant "head" (singleton)
+    shaft = "shaft"          # Schacht (manhole)
     connection = "connection"  # Anschluss
+
+
+# Object types that users manage on the "Objekte" page (the plant is a singleton
+# managed on its own page and is not offered here).
+OBJECT_TYPES = (AssetType.shaft, AssetType.connection)
 
 
 def _utcnow() -> datetime:

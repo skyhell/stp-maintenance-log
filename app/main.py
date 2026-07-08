@@ -15,7 +15,7 @@ from app import __version__
 from app.config import BASE_DIR, settings
 from app.database import SessionLocal, init_db
 from app.models.user import User, UserRole
-from app.routers import account, admin, assets, auth, dashboard, entries
+from app.routers import account, admin, assets, auth, dashboard, entries, plant
 from app.routers import map as map_router
 from app.services.security import get_current_user, hash_password
 from app.services.templating import render
@@ -47,11 +47,43 @@ def _bootstrap_admin() -> None:
             )
 
 
+def _migrate_asset_types() -> None:
+    """Rename the legacy 'channel' asset type to 'shaft' in existing databases."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE assets SET type='shaft' WHERE type='channel'"))
+
+
+def _bootstrap_plant() -> None:
+    """Ensure the single treatment-plant ('Anlage') record exists."""
+    from app.models.asset import Asset, AssetType
+
+    with SessionLocal() as db:
+        count = db.scalar(
+            select(func.count(Asset.id)).where(Asset.type == AssetType.plant)
+        ) or 0
+        if count == 0:
+            db.add(
+                Asset(
+                    uid="ANLAGE",
+                    name="Kläranlage",
+                    type=AssetType.plant,
+                )
+            )
+            db.commit()
+            logger.info("Created the initial treatment-plant record ('Anlage').")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing database ...")
     init_db()
+    _migrate_asset_types()
     _bootstrap_admin()
+    _bootstrap_plant()
     # Ensure data directories exist.
     settings.upload_path  # noqa: B018
     settings.backup_path  # noqa: B018
@@ -92,6 +124,7 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(entries.router)
 app.include_router(assets.router)
+app.include_router(plant.router)
 app.include_router(map_router.router)
 app.include_router(account.router)
 app.include_router(admin.router)
