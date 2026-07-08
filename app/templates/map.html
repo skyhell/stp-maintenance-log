@@ -6,6 +6,12 @@
 {% block content %}
 <div class="page-head"><h1>{{ t('map.title') }}</h1></div>
 
+<div class="map-toolbar">
+  <button type="button" class="map-add-btn" data-type="shaft">{{ t('map.add_shaft') }}</button>
+  <button type="button" class="map-add-btn" data-type="connection">{{ t('map.add_connection') }}</button>
+  <span class="map-place-hint" id="placeHint">{{ t('map.place_hint') }}</span>
+</div>
+
 <div id="map"></div>
 
 <div class="map-legend">
@@ -25,7 +31,17 @@
     shaft: {{ t('asset.type.shaft')|tojson }},
     connection: {{ t('asset.type.connection')|tojson }}
   };
-  var nextLabel = {{ t('asset.next_maintenance')|tojson }};
+  var L10N = {
+    next: {{ t('asset.next_maintenance')|tojson }},
+    name: {{ t('map.obj_name')|tojson }},
+    uid: {{ t('map.obj_uid')|tojson }},
+    save: {{ t('common.save')|tojson }},
+    cancel: {{ t('common.cancel')|tojson }},
+    nameRequired: {{ t('map.name_required')|tojson }},
+    uidTaken: {{ t('map.uid_taken')|tojson }},
+    error: {{ t('map.create_error')|tojson }}
+  };
+  var CSRF = {{ csrf_token|tojson }};
 
   var map = L.map("map").setView([48.2082, 16.3738], 12); // default: Vienna
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -33,35 +49,125 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
+  function editHref(a) {
+    return a.type === "plant" ? "/plant" : "/assets/" + a.id + "/edit";
+  }
+
+  function addAssetMarker(a) {
+    var marker = L.circleMarker([a.lat, a.lon], {
+      radius: 9, color: "#fff", weight: 2,
+      fillColor: colors[a.type] || "#8e8e93", fillOpacity: 1
+    }).addTo(map);
+    var html =
+      '<strong>' + escapeHtml(a.name) + '</strong><br>' +
+      '<span style="color:#888">' + escapeHtml(a.uid) + ' · ' +
+      (typeLabels[a.type] || a.type) + '</span>';
+    if (a.address) html += '<br>' + escapeHtml(a.address);
+    if (a.next_maintenance) html += '<br>' + L10N.next + ': ' + a.next_maintenance;
+    html += '<br><a href="' + editHref(a) + '">✎</a>';
+    marker.bindPopup(html);
+    return marker;
+  }
+
   fetch("/api/assets")
     .then(function (r) { return r.json(); })
     .then(function (data) {
       var bounds = [];
       data.assets.forEach(function (a) {
-        var marker = L.circleMarker([a.lat, a.lon], {
-          radius: 9,
-          color: "#fff",
-          weight: 2,
-          fillColor: colors[a.type] || "#8e8e93",
-          fillOpacity: 1
-        }).addTo(map);
-        var html =
-          '<strong>' + escapeHtml(a.name) + '</strong><br>' +
-          '<span style="color:#888">' + escapeHtml(a.uid) + ' · ' +
-          (typeLabels[a.type] || a.type) + '</span>';
-        if (a.address) html += '<br>' + escapeHtml(a.address);
-        if (a.next_maintenance) html += '<br>' + nextLabel + ': ' + a.next_maintenance;
-        html += '<br><a href="/assets/' + a.id + '/edit">✎</a>';
-        marker.bindPopup(html);
+        addAssetMarker(a);
         bounds.push([a.lat, a.lon]);
       });
       if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-      // Ensure Leaflet uses the final container size (robust if it was
-      // initialised before the layout settled).
       setTimeout(function () { map.invalidateSize(); }, 200);
     });
 
   window.addEventListener("load", function () { map.invalidateSize(); });
+
+  // ---------- Placing new objects by clicking the map ----------
+  var placing = null;
+  var tempMarker = null;
+  var hint = document.getElementById("placeHint");
+
+  function setPlacing(type, btn) {
+    placing = type;
+    document.querySelectorAll(".map-add-btn").forEach(function (b) {
+      b.classList.toggle("active", b === btn && type !== null);
+    });
+    hint.style.display = type ? "inline" : "none";
+    map.getContainer().style.cursor = type ? "crosshair" : "";
+  }
+
+  document.querySelectorAll(".map-add-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var type = btn.getAttribute("data-type");
+      setPlacing(placing === type ? null : type, btn);
+    });
+  });
+
+  map.on("click", function (e) {
+    if (!placing) return;
+    openCreatePopup(e.latlng.lat, e.latlng.lng, placing);
+  });
+
+  function openCreatePopup(lat, lon, type) {
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.circleMarker([lat, lon], {
+      radius: 9, color: "#fff", weight: 2, fillColor: colors[type], fillOpacity: 1,
+      dashArray: "3"
+    }).addTo(map);
+
+    var form = document.createElement("div");
+    form.className = "map-create-form";
+    form.innerHTML =
+      '<strong>' + (typeLabels[type] || type) + '</strong>' +
+      '<label>' + L10N.name + '</label>' +
+      '<input class="mc-name" type="text" autocomplete="off">' +
+      '<label>' + L10N.uid + '</label>' +
+      '<input class="mc-uid" type="text" autocomplete="off">' +
+      '<div class="mc-err"></div>' +
+      '<div class="mc-actions">' +
+      '<button type="button" class="btn btn-sm mc-save">' + L10N.save + '</button>' +
+      '<button type="button" class="btn btn-secondary btn-sm mc-cancel">' + L10N.cancel + '</button>' +
+      '</div>';
+
+    var popup = L.popup({ minWidth: 220, closeButton: false })
+      .setLatLng([lat, lon]).setContent(form).openOn(map);
+
+    function cleanup() {
+      map.closePopup(popup);
+      if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
+    }
+    var err = form.querySelector(".mc-err");
+    form.querySelector(".mc-cancel").addEventListener("click", cleanup);
+    setTimeout(function () { form.querySelector(".mc-name").focus(); }, 50);
+
+    form.querySelector(".mc-save").addEventListener("click", function () {
+      var name = form.querySelector(".mc-name").value.trim();
+      var uid = form.querySelector(".mc-uid").value.trim();
+      if (!name) { err.textContent = L10N.nameRequired; return; }
+
+      var fd = new FormData();
+      fd.append("csrf_token", CSRF);
+      fd.append("name", name);
+      fd.append("uid", uid);
+      fd.append("type", type);
+      fd.append("latitude", lat);
+      fd.append("longitude", lon);
+
+      fetch("/api/objects", { method: "POST", body: fd })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.j && res.j.ok) {
+            cleanup();
+            addAssetMarker(res.j.asset).openPopup();
+            setPlacing(null, null);
+          } else {
+            err.textContent = (res.j && res.j.error === "uid_taken") ? L10N.uidTaken : L10N.error;
+          }
+        })
+        .catch(function () { err.textContent = L10N.error; });
+    });
+  }
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, function (c) {

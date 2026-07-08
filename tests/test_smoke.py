@@ -190,6 +190,58 @@ def test_plant_singleton():
         assert sum(1 for a in overview if a["type"] == "plant") <= 1
 
 
+def test_map_place_object():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/assets/new")  # session-wide CSRF token
+
+        # Place a shaft by "clicking" the map (lat/lon come from the click).
+        r = client.post(
+            "/api/objects",
+            data={
+                "csrf_token": token,
+                "name": "Schacht am Kanal",
+                "type": "shaft",
+                "latitude": "48.2100",
+                "longitude": "16.3700",
+            },
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ok"] is True
+        assert body["asset"]["type"] == "shaft"
+        assert body["asset"]["uid"]  # auto-generated
+        # It now shows up among the map markers.
+        uids = {a["uid"] for a in client.get("/api/assets").json()["assets"]}
+        assert body["asset"]["uid"] in uids
+
+        # The plant type cannot be created via the map.
+        r = client.post(
+            "/api/objects",
+            data={
+                "csrf_token": token,
+                "name": "X",
+                "type": "plant",
+                "latitude": "48.2",
+                "longitude": "16.3",
+            },
+        )
+        assert r.status_code == 400
+
+        # CSRF is enforced.
+        r = client.post(
+            "/api/objects",
+            data={
+                "csrf_token": "nope",
+                "name": "Y",
+                "type": "connection",
+                "latitude": "48.2",
+                "longitude": "16.3",
+            },
+        )
+        assert r.status_code == 403
+
+
 def test_pdf_export():
     with _client() as client:
         _login(client)
