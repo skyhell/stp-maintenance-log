@@ -25,10 +25,10 @@
     <div class="field-row" x-data="{ show: false }">
       <div class="field">
         <label>{{ t('login.password') }}</label>
-        <div class="input-with-btn">
+        <div class="pw-wrap">
           <input name="password" minlength="8" required autocomplete="new-password"
                  type="password" :type="show ? 'text' : 'password'">
-          <button type="button" class="btn btn-secondary" @click="show = !show"
+          <button type="button" class="pw-toggle" @click="show = !show"
                   title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
             <span x-text="show ? '🙈' : '👁'">👁</span>
           </button>
@@ -36,8 +36,14 @@
       </div>
       <div class="field">
         <label>{{ t('account.confirm_password') }}</label>
-        <input name="password_confirm" minlength="8" required autocomplete="new-password"
-               type="password" :type="show ? 'text' : 'password'">
+        <div class="pw-wrap">
+          <input name="password_confirm" minlength="8" required autocomplete="new-password"
+                 type="password" :type="show ? 'text' : 'password'">
+          <button type="button" class="pw-toggle" @click="show = !show"
+                  title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
+            <span x-text="show ? '🙈' : '👁'">👁</span>
+          </button>
+        </div>
       </div>
     </div>
     <div class="field">
@@ -104,10 +110,10 @@
             <div class="field-row" x-data="{ show: false }">
               <div class="field">
                 <label>{{ t('account.new_password') }} <span class="muted">({{ t('common.optional') }})</span></label>
-                <div class="input-with-btn">
+                <div class="pw-wrap">
                   <input name="new_password" minlength="8" autocomplete="new-password"
                          type="password" :type="show ? 'text' : 'password'">
-                  <button type="button" class="btn btn-secondary" @click="show = !show"
+                  <button type="button" class="pw-toggle" @click="show = !show"
                           title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
                     <span x-text="show ? '🙈' : '👁'">👁</span>
                   </button>
@@ -115,8 +121,14 @@
               </div>
               <div class="field">
                 <label>{{ t('account.confirm_password') }}</label>
-                <input name="new_password_confirm" minlength="8" autocomplete="new-password"
-                       type="password" :type="show ? 'text' : 'password'">
+                <div class="pw-wrap">
+                  <input name="new_password_confirm" minlength="8" autocomplete="new-password"
+                         type="password" :type="show ? 'text' : 'password'">
+                  <button type="button" class="pw-toggle" @click="show = !show"
+                          title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
+                    <span x-text="show ? '🙈' : '👁'">👁</span>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="field">
