@@ -38,7 +38,10 @@
         {% for r in roles %}<option value="{{ r.value }}">{{ t('admin.role.' + r.value) }}</option>{% endfor %}
       </select>
     </div>
-    <button class="btn" type="submit">{{ t('common.create') }}</button>
+    <div class="flex" style="margin-top:8px;">
+      <button class="btn" type="submit">{{ t('common.create') }}</button>
+      <button class="btn btn-secondary" type="button" @click="open = false">{{ t('common.cancel') }}</button>
+    </div>
   </form>
 </div>
 
@@ -106,7 +109,10 @@
             <div class="field">
               <label class="flex" style="gap:8px;"><input type="checkbox" name="is_active" style="width:auto;" {% if u.is_active %}checked{% endif %}> {{ t('admin.active') }}</label>
             </div>
-            <button class="btn btn-sm" type="submit">{{ t('common.save') }}</button>
+            <div class="flex" style="margin-top:8px;">
+              <button class="btn btn-sm" type="submit">{{ t('common.save') }}</button>
+              <button class="btn btn-secondary btn-sm" type="button" @click="editId = null">{{ t('common.cancel') }}</button>
+            </div>
           </form>
         </td>
       </tr>

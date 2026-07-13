@@ -91,6 +91,9 @@
     <textarea id="comment" name="comment">{{ plant.comment or '' }}</textarea>
   </div>
 
-  <button class="btn" type="submit">{{ t('common.save') }}</button>
+  <div class="flex" style="margin-top:8px;">
+    <button class="btn" type="submit">{{ t('common.save') }}</button>
+    <a href="/plant" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+  </div>
 </form>
 {% endblock %}
