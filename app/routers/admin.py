@@ -46,6 +46,7 @@ def create_user(
     username: str = Form(...),
     email: str = Form(""),
     password: str = Form(...),
+    password_confirm: str = Form(""),
     role: str = Form("user"),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
@@ -54,6 +55,9 @@ def create_user(
     username = username.strip()
     if not username or len(password) < 8:
         flash(request, "error.generic", "error")
+        return RedirectResponse("/admin/users", status_code=303)
+    if password != password_confirm:
+        flash(request, "account.password_mismatch", "error")
         return RedirectResponse("/admin/users", status_code=303)
     if db.scalar(select(User).where(User.username == username)):
         flash(request, "error.generic", "error")
@@ -80,6 +84,7 @@ def edit_user(
     role: str = Form("user"),
     is_active: str = Form(""),
     new_password: str = Form(""),
+    new_password_confirm: str = Form(""),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
@@ -87,6 +92,9 @@ def edit_user(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if new_password and new_password != new_password_confirm:
+        flash(request, "account.password_mismatch", "error")
+        return RedirectResponse("/admin/users", status_code=303)
 
     user.email = email.strip() or None
     if role in (r.value for r in UserRole):

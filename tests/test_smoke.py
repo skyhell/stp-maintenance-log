@@ -659,6 +659,7 @@ def test_admin_only_pages():
                 "csrf_token": token,
                 "username": "worker",
                 "password": "workerpass123",
+                "password_confirm": "workerpass123",
                 "role": "user",
             },
             follow_redirects=False,
@@ -685,6 +686,64 @@ def test_admin_only_pages():
         assert client.get("/admin/backup", follow_redirects=False).status_code == 403
         # The plant report moved onto the admin-only plant page.
         assert client.get("/plant/report.pdf", follow_redirects=False).status_code == 403
+
+
+def test_admin_password_confirmation():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/admin/users")
+
+        # Mismatching passwords: the user must not be created.
+        client.post(
+            "/admin/users/new",
+            data={
+                "csrf_token": token,
+                "username": "mismatch",
+                "password": "password12345",
+                "password_confirm": "different12345",
+                "role": "user",
+            },
+            follow_redirects=False,
+        )
+        page = client.get("/admin/users").text
+        assert "mismatch" not in page
+
+        # Matching passwords: created and able to log in.
+        client.post(
+            "/admin/users/new",
+            data={
+                "csrf_token": token,
+                "username": "confirmed",
+                "password": "password12345",
+                "password_confirm": "password12345",
+                "role": "user",
+            },
+            follow_redirects=False,
+        )
+        assert "confirmed" in client.get("/admin/users").text
+
+        # Editing: a mismatching new password must not be applied.
+        import re
+
+        page = client.get("/admin/users").text
+        target = re.findall(r'action="/admin/users/(\d+)/edit"', page)[-1]
+        client.post(
+            f"/admin/users/{target}/edit",
+            data={
+                "csrf_token": token,
+                "email": "",
+                "role": "user",
+                "is_active": "on",
+                "new_password": "changed123456",
+                "new_password_confirm": "other123456",
+            },
+            follow_redirects=False,
+        )
+        client.get("/logout")
+        # Old password still works because the mismatching change was rejected.
+        r = _login(client, "confirmed", "password12345")
+        assert r.status_code == 303
+        assert client.get("/").status_code == 200
 
 
 def test_2fa_enable_and_login():

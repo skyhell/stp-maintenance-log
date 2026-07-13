@@ -22,17 +22,29 @@
         <input name="email" type="email">
       </div>
     </div>
-    <div class="field-row">
+    <div class="field-row" x-data="{ show: false }">
       <div class="field">
         <label>{{ t('login.password') }}</label>
-        <input name="password" type="password" minlength="8" required>
+        <div class="input-with-btn">
+          <input name="password" minlength="8" required autocomplete="new-password"
+                 type="password" :type="show ? 'text' : 'password'">
+          <button type="button" class="btn btn-secondary" @click="show = !show"
+                  title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
+            <span x-text="show ? '🙈' : '👁'">👁</span>
+          </button>
+        </div>
       </div>
       <div class="field">
-        <label>{{ t('admin.role') }}</label>
-        <select name="role">
-          {% for r in roles %}<option value="{{ r.value }}">{{ t('admin.role.' + r.value) }}</option>{% endfor %}
-        </select>
+        <label>{{ t('account.confirm_password') }}</label>
+        <input name="password_confirm" minlength="8" required autocomplete="new-password"
+               type="password" :type="show ? 'text' : 'password'">
       </div>
+    </div>
+    <div class="field">
+      <label>{{ t('admin.role') }}</label>
+      <select name="role">
+        {% for r in roles %}<option value="{{ r.value }}">{{ t('admin.role.' + r.value) }}</option>{% endfor %}
+      </select>
     </div>
     <button class="btn" type="submit">{{ t('common.create') }}</button>
   </form>
@@ -88,9 +100,23 @@
                   {% for r in roles %}<option value="{{ r.value }}" {% if u.role == r %}selected{% endif %}>{{ t('admin.role.' + r.value) }}</option>{% endfor %}
                 </select>
               </div>
+            </div>
+            <div class="field-row" x-data="{ show: false }">
               <div class="field">
                 <label>{{ t('account.new_password') }} <span class="muted">({{ t('common.optional') }})</span></label>
-                <input name="new_password" type="password" minlength="8">
+                <div class="input-with-btn">
+                  <input name="new_password" minlength="8" autocomplete="new-password"
+                         type="password" :type="show ? 'text' : 'password'">
+                  <button type="button" class="btn btn-secondary" @click="show = !show"
+                          title="{{ t('password.toggle') }}" aria-label="{{ t('password.toggle') }}">
+                    <span x-text="show ? '🙈' : '👁'">👁</span>
+                  </button>
+                </div>
+              </div>
+              <div class="field">
+                <label>{{ t('account.confirm_password') }}</label>
+                <input name="new_password_confirm" minlength="8" autocomplete="new-password"
+                       type="password" :type="show ? 'text' : 'password'">
               </div>
             </div>
             <div class="field">

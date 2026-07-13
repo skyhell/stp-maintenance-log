@@ -178,6 +178,7 @@
   "admin.active": "Aktiv",
   "admin.created": "Erstellt",
   "admin.2fa": "2FA",
+  "password.toggle": "Passwort anzeigen/verbergen",
 
   "account.title": "Mein Konto",
   "account.change_password": "Passwort ändern",
