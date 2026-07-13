@@ -555,6 +555,49 @@ def test_entry_operating_hours():
         assert r.content[:5] == b"%PDF-"
 
 
+def test_admin_only_pages():
+    with _client() as client:
+        _login(client)
+
+        # Admins see the plant/admin/backup links.
+        dash = client.get("/").text
+        for href in ('href="/plant"', 'href="/admin/users"', 'href="/admin/backup"'):
+            assert href in dash
+
+        # Create a normal (non-admin) user.
+        token = _csrf(client, "/admin/users")
+        client.post(
+            "/admin/users/new",
+            data={
+                "csrf_token": token,
+                "username": "worker",
+                "password": "workerpass123",
+                "role": "user",
+            },
+            follow_redirects=False,
+        )
+
+        client.get("/logout")
+        _login(client, "worker", "workerpass123")
+
+        # The nav must not offer plant, user management or backup.
+        dash = client.get("/").text
+        for href in ('href="/plant"', 'href="/admin/users"', 'href="/admin/backup"'):
+            assert href not in dash
+
+        # The pages themselves are forbidden, viewing and editing alike.
+        assert client.get("/plant", follow_redirects=False).status_code == 403
+        token = _csrf(client, "/entries/new")
+        r = client.post(
+            "/plant",
+            data={"csrf_token": token, "name": "Hacked"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 403
+        assert client.get("/admin/users", follow_redirects=False).status_code == 403
+        assert client.get("/admin/backup", follow_redirects=False).status_code == 403
+
+
 def test_2fa_enable_and_login():
     import re
 

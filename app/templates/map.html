@@ -51,6 +51,7 @@
     pipeError: {{ t('map.pipe_error')|tojson }}
   };
   var CSRF = {{ csrf_token|tojson }};
+  var IS_ADMIN = {{ current_user.is_admin|tojson }};
 
   var map = L.map("map").setView([48.2082, 16.3738], 12); // default: Vienna
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -72,7 +73,10 @@
       (typeLabels[a.type] || a.type) + '</span>';
     if (a.address) html += '<br>' + escapeHtml(a.address);
     if (a.next_maintenance) html += '<br>' + L10N.next + ': ' + a.next_maintenance;
-    html += '<br><a href="' + editHref(a) + '">✎</a>';
+    // The plant page is admin-only; hide its edit link for other users.
+    if (a.type !== "plant" || IS_ADMIN) {
+      html += '<br><a href="' + editHref(a) + '">✎</a>';
+    }
     return html;
   }
 

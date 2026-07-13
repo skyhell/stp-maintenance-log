@@ -13,7 +13,7 @@ from app.database import get_db
 from app.models.asset import Asset, AssetType
 from app.models.user import User
 from app.services.maintenance_schedule import refresh_next_maintenance
-from app.services.security import get_current_user, verify_csrf
+from app.services.security import require_admin, verify_csrf
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/plant")
@@ -53,7 +53,7 @@ def _get_plant(db: Session) -> Asset:
 def plant_page(
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     plant = _get_plant(db)
     return render(request, "plant.html", {"plant": plant}, db=db, user=user)
@@ -72,7 +72,7 @@ def update_plant(
     longitude: str = Form(""),
     comment: str = Form(""),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     verify_csrf(request, csrf_token)
     plant = _get_plant(db)
