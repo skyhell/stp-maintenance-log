@@ -52,9 +52,9 @@ no external CDN, no API keys.
 |---------------------|-------------------|
 | ![Map](docs/screenshots/map.png) | ![Objects](docs/screenshots/assets.png) |
 
-**Dark mode** — persistent, follows your preference:
-
-![Dark mode](docs/screenshots/dashboard-dark.png)
+| Plant & PDF report | Dark mode |
+|--------------------|-----------|
+| ![Plant](docs/screenshots/plant.png) | ![Dark mode](docs/screenshots/dashboard-dark.png) |
 
 ---
 
