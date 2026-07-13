@@ -75,6 +75,7 @@
   "entry.filter_to": "To",
   "entry.filter_text": "Text search",
   "entry.operating_hours": "Operating-hours counter",
+  "entry.operating_hours_required": "The operating-hours counter is required (number).",
 
   "measure.title": "Measurements",
   "measure.new": "New measurement",
@@ -86,6 +87,7 @@
   "measure.temperature": "Temperature (°C)",
   "measure.operating_hours": "Operating-hours counter",
   "measure.no_data": "No measurements recorded yet.",
+  "measure.values_required": "Measurement, value, temperature and operating-hours counter are required (numbers).",
   "measure.saved": "Measurement saved.",
   "measure.deleted": "Measurement deleted.",
 

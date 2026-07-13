@@ -7,6 +7,8 @@
   <a href="/entries" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
 </div>
 
+{% if error %}<div class="flash flash-error">{{ t(error) }}</div>{% endif %}
+
 <form method="post"
       action="{{ '/entries/' ~ entry.id ~ '/edit' if entry else '/entries/new' }}"
       enctype="multipart/form-data" class="card">
@@ -19,10 +21,11 @@
     </div>
     <div class="field">
       <label for="asset_id">{{ t('entry.asset') }}</label>
+      {% set sel_asset = form.asset_id if form else (entry.asset_id if entry else none) %}
       <select id="asset_id" name="asset_id">
         <option value="">{{ t('common.none') }}</option>
         {% for a in assets %}
-        <option value="{{ a.id }}" {% if entry and entry.asset_id == a.id %}selected{% endif %}>
+        <option value="{{ a.id }}" {% if sel_asset == a.id %}selected{% endif %}>
           {{ a.name }} ({{ a.uid }})
         </option>
         {% endfor %}
@@ -33,7 +36,7 @@
   <div class="field">
     <label for="activity">{{ t('entry.activity') }}</label>
     <input id="activity" name="activity" list="activity-list" autocomplete="off"
-           value="{{ entry.activity.name if entry and entry.activity else '' }}">
+           value="{{ form.activity if form else (entry.activity.name if entry and entry.activity else '') }}">
     <datalist id="activity-list">
       {% for act in activities %}<option value="{{ act.name }}">{% endfor %}
     </datalist>
@@ -43,7 +46,7 @@
   <div class="field">
     <label for="description">{{ t('entry.description') }}</label>
     <div class="input-with-btn">
-      <textarea id="description" name="description">{{ entry.description or '' if entry else '' }}</textarea>
+      <textarea id="description" name="description">{{ form.description if form else (entry.description or '' if entry else '') }}</textarea>
       {{ m.speech_button('description', t, lang) }}
     </div>
   </div>
@@ -51,7 +54,7 @@
   <div class="field">
     <label for="notes">{{ t('entry.notes') }}</label>
     <div class="input-with-btn">
-      <textarea id="notes" name="notes">{{ entry.notes or '' if entry else '' }}</textarea>
+      <textarea id="notes" name="notes">{{ form.notes if form else (entry.notes or '' if entry else '') }}</textarea>
       {{ m.speech_button('notes', t, lang) }}
     </div>
   </div>
@@ -59,15 +62,15 @@
   <div class="field">
     <label for="comment">{{ t('entry.comment') }}</label>
     <div class="input-with-btn">
-      <textarea id="comment" name="comment">{{ entry.comment or '' if entry else '' }}</textarea>
+      <textarea id="comment" name="comment">{{ form.comment if form else (entry.comment or '' if entry else '') }}</textarea>
       {{ m.speech_button('comment', t, lang) }}
     </div>
   </div>
 
   <div class="field">
-    <label for="operating_hours">{{ t('entry.operating_hours') }}</label>
-    <input id="operating_hours" name="operating_hours" inputmode="decimal" style="max-width:200px;"
-           value="{{ entry.operating_hours if entry and entry.operating_hours is not none else '' }}">
+    <label for="operating_hours">{{ t('entry.operating_hours') }} <span class="muted">({{ t('common.required') }})</span></label>
+    <input id="operating_hours" name="operating_hours" inputmode="decimal" required style="max-width:200px;"
+           value="{{ form.operating_hours if form else (entry.operating_hours if entry and entry.operating_hours is not none else '') }}">
   </div>
 
   <div class="field">

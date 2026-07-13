@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
@@ -39,10 +39,12 @@ def _parse_float(value: str | None) -> float | None:
 
 
 def _parameters(db: Session) -> list[str]:
-    """Distinct parameter names for the self-building dropdown/datalist."""
+    """Self-building parameter list, most recently used first (like activities)."""
     return list(
         db.scalars(
-            select(Measurement.parameter).distinct().order_by(Measurement.parameter)
+            select(Measurement.parameter)
+            .group_by(Measurement.parameter)
+            .order_by(func.max(Measurement.measured_at).desc())
         ).all()
     )
 
@@ -94,6 +96,31 @@ def new_measurement(
     )
 
 
+def _render_form_error(
+    request: Request,
+    db: Session,
+    user: User,
+    measurement: Measurement | None,
+    measured_at: str,
+    form: dict,
+):
+    """Re-render the form with an error, keeping what the user typed."""
+    return render(
+        request,
+        "measurements/form.html",
+        {
+            "measurement": measurement,
+            "parameters": _parameters(db),
+            "now": measured_at or datetime.now().strftime("%Y-%m-%dT%H:%M"),
+            "error": "measure.values_required",
+            "form": form,
+        },
+        db=db,
+        user=user,
+        status_code=400,
+    )
+
+
 @router.post("/new")
 def create_measurement(
     request: Request,
@@ -108,17 +135,26 @@ def create_measurement(
 ):
     verify_csrf(request, csrf_token)
     parameter = parameter.strip()
-    if not parameter:
-        return RedirectResponse("/measurements/new", status_code=303)
+    value_f = _parse_float(value)
+    temperature_f = _parse_float(temperature)
+    operating_hours_f = _parse_float(operating_hours)
+    if not parameter or value_f is None or temperature_f is None or operating_hours_f is None:
+        form = {
+            "parameter": parameter,
+            "value": value,
+            "temperature": temperature,
+            "operating_hours": operating_hours,
+        }
+        return _render_form_error(request, db, user, None, measured_at, form)
 
     db.add(
         Measurement(
             measured_at=_parse_dt(measured_at) or datetime.now(UTC),
             user_id=user.id,
             parameter=parameter,
-            value=_parse_float(value),
-            temperature=_parse_float(temperature),
-            operating_hours=_parse_float(operating_hours),
+            value=value_f,
+            temperature=temperature_f,
+            operating_hours=operating_hours_f,
         )
     )
     db.commit()
@@ -167,11 +203,24 @@ def update_measurement(
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
+    parameter = parameter.strip()
+    value_f = _parse_float(value)
+    temperature_f = _parse_float(temperature)
+    operating_hours_f = _parse_float(operating_hours)
+    if not parameter or value_f is None or temperature_f is None or operating_hours_f is None:
+        form = {
+            "parameter": parameter,
+            "value": value,
+            "temperature": temperature,
+            "operating_hours": operating_hours,
+        }
+        return _render_form_error(request, db, user, measurement, measured_at, form)
+
     measurement.measured_at = _parse_dt(measured_at) or measurement.measured_at
-    measurement.parameter = parameter.strip() or measurement.parameter
-    measurement.value = _parse_float(value)
-    measurement.temperature = _parse_float(temperature)
-    measurement.operating_hours = _parse_float(operating_hours)
+    measurement.parameter = parameter
+    measurement.value = value_f
+    measurement.temperature = temperature_f
+    measurement.operating_hours = operating_hours_f
     db.commit()
     flash(request, "measure.saved")
     return RedirectResponse("/measurements", status_code=303)

@@ -189,6 +189,32 @@ def new_entry(
     )
 
 
+def _render_form_error(
+    request: Request,
+    db: Session,
+    user: User,
+    entry: MaintenanceEntry | None,
+    occurred_at: str,
+    form: dict,
+):
+    """Re-render the entry form with an error, keeping what the user typed."""
+    return render(
+        request,
+        "entries/form.html",
+        {
+            "entry": entry,
+            "assets": list(db.scalars(select(Asset).order_by(Asset.name)).all()),
+            "activities": list_activities(db),
+            "now": occurred_at or datetime.now().strftime("%Y-%m-%dT%H:%M"),
+            "error": "entry.operating_hours_required",
+            "form": form,
+        },
+        db=db,
+        user=user,
+        status_code=400,
+    )
+
+
 async def _handle_images(db: Session, entry: MaintenanceEntry, files: list[UploadFile]):
     for f in files:
         if not f or not f.filename:
@@ -217,6 +243,18 @@ async def create_entry(
 ):
     verify_csrf(request, csrf_token)
 
+    operating_hours_f = _parse_float(operating_hours)
+    if operating_hours_f is None:
+        form = {
+            "asset_id": int(asset_id) if asset_id.isdigit() else None,
+            "activity": activity,
+            "description": description,
+            "notes": notes,
+            "comment": comment,
+            "operating_hours": operating_hours,
+        }
+        return _render_form_error(request, db, user, None, occurred_at, form)
+
     activity_obj = get_or_create_activity(db, activity)
     entry = MaintenanceEntry(
         occurred_at=_parse_dt(occurred_at) or datetime.now(UTC),
@@ -226,7 +264,7 @@ async def create_entry(
         description=description.strip() or None,
         notes=notes.strip() or None,
         comment=comment.strip() or None,
-        operating_hours=_parse_float(operating_hours),
+        operating_hours=operating_hours_f,
     )
     db.add(entry)
     db.flush()
@@ -283,6 +321,18 @@ async def update_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
 
+    operating_hours_f = _parse_float(operating_hours)
+    if operating_hours_f is None:
+        form = {
+            "asset_id": int(asset_id) if asset_id.isdigit() else None,
+            "activity": activity,
+            "description": description,
+            "notes": notes,
+            "comment": comment,
+            "operating_hours": operating_hours,
+        }
+        return _render_form_error(request, db, user, entry, occurred_at, form)
+
     activity_obj = get_or_create_activity(db, activity)
     old_asset_id = entry.asset_id
     entry.occurred_at = _parse_dt(occurred_at) or entry.occurred_at
@@ -291,7 +341,7 @@ async def update_entry(
     entry.description = description.strip() or None
     entry.notes = notes.strip() or None
     entry.comment = comment.strip() or None
-    entry.operating_hours = _parse_float(operating_hours)
+    entry.operating_hours = operating_hours_f
     if images:
         await _handle_images(db, entry, images)
     db.flush()

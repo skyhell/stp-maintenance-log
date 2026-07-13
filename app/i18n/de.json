@@ -75,6 +75,7 @@
   "entry.filter_to": "Bis",
   "entry.filter_text": "Textsuche",
   "entry.operating_hours": "Betriebsstunden-Zählerstand",
+  "entry.operating_hours_required": "Der Betriebsstunden-Zählerstand ist ein Pflichtfeld (Zahl erforderlich).",
 
   "measure.title": "Messwerte",
   "measure.new": "Neuer Messwert",
@@ -86,6 +87,7 @@
   "measure.temperature": "Temperatur (°C)",
   "measure.operating_hours": "Betriebsstunden-Zählerstand",
   "measure.no_data": "Noch keine Messwerte erfasst.",
+  "measure.values_required": "Messung, Messwert, Temperatur und Betriebsstunden-Zählerstand sind Pflichtfelder (Zahlen erforderlich).",
   "measure.saved": "Messwert gespeichert.",
   "measure.deleted": "Messwert gelöscht.",
 

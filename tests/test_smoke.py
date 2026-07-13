@@ -101,6 +101,7 @@ def test_asset_and_entry_crud():
                 "occurred_at": "2024-05-01T10:00",
                 "activity": "Sichtprüfung",
                 "description": "All good",
+                "operating_hours": "100",
             },
             follow_redirects=False,
         )
@@ -336,6 +337,7 @@ def test_maintenance_interval_auto_bump():
                 "occurred_at": "2024-05-15T10:00",
                 "asset_id": str(asset["id"]),
                 "activity": "Spülung",
+                "operating_hours": "200",
             },
             follow_redirects=False,
         )
@@ -359,6 +361,7 @@ def test_entry_activity_filter():
                     "occurred_at": "2024-06-01T08:00",
                     "activity": activity,
                     "description": desc,
+                    "operating_hours": "300",
                 },
                 follow_redirects=False,
             )
@@ -442,12 +445,15 @@ def test_measurements_crud_and_filter():
         token = _csrf(client, "/measurements/new")
 
         # Create two measurements; German decimal commas must be accepted.
-        for parameter, value in [("NH4", "1,8"), ("O2", "2.1")]:
+        for measured_at, parameter, value in [
+            ("2024-07-01T09:00", "NH4", "1,8"),
+            ("2024-07-01T10:00", "O2", "2.1"),
+        ]:
             client.post(
                 "/measurements/new",
                 data={
                     "csrf_token": token,
-                    "measured_at": "2024-07-01T09:00",
+                    "measured_at": measured_at,
                     "parameter": parameter,
                     "value": value,
                     "temperature": "14,5",
@@ -459,6 +465,25 @@ def test_measurements_crud_and_filter():
         assert "<strong>NH4</strong>" in page
         assert "<strong>O2</strong>" in page
         assert "1.8" in page and "14.5" in page and "1234.5" in page
+
+        # Value, temperature and counter reading are mandatory.
+        r = client.post(
+            "/measurements/new",
+            data={
+                "csrf_token": token,
+                "measured_at": "2024-07-01T11:00",
+                "parameter": "NH4",
+                "value": "",
+                "temperature": "12",
+                "operating_hours": "1300",
+            },
+            follow_redirects=False,
+        )
+        assert r.status_code == 400
+
+        # The parameter datalist lists the most recently used first (like activities).
+        form_page = client.get("/measurements/new").text
+        assert form_page.index('<option value="O2">') < form_page.index('<option value="NH4">')
 
         # Filter by parameter.
         filtered = client.get("/measurements?parameter=NH4").text
@@ -474,7 +499,7 @@ def test_measurements_crud_and_filter():
                 "measured_at": "2024-07-01T09:00",
                 "parameter": "NH4",
                 "value": "2,5",
-                "temperature": "",
+                "temperature": "15",
                 "operating_hours": "1240",
             },
             follow_redirects=False,
@@ -504,6 +529,20 @@ def test_entry_operating_hours():
         page = client.get("/entries").text
         assert "counter check" in page
         assert "512.5" in page
+
+        # The counter reading is mandatory: missing value is rejected.
+        r = client.post(
+            "/entries/new",
+            data={
+                "csrf_token": token,
+                "occurred_at": "2024-07-02T11:00",
+                "activity": "Zählerablesung",
+                "description": "no counter",
+            },
+            follow_redirects=False,
+        )
+        assert r.status_code == 400
+        assert "no counter" not in client.get("/entries").text
 
         # The PDF export still works with the new column.
         r = client.get("/entries/export.pdf")
