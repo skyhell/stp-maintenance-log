@@ -113,6 +113,8 @@
   "asset.latitude": "Latitude",
   "asset.longitude": "Longitude",
   "asset.comment": "Comment",
+  "asset.images": "Images",
+  "asset.add_images": "Add images",
   "asset.use_gps": "Use current location (GPS)",
   "asset.no_assets": "No objects created yet.",
   "asset.saved": "Object saved.",

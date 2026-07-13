@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.asset import OBJECT_TYPES, Asset, AssetType
+from app.models.asset import OBJECT_TYPES, Asset, AssetImage, AssetType
 from app.models.asset_event import AssetEventAction
 from app.models.maintenance import MaintenanceEntry
 from app.models.pipe import PipeSegment
@@ -22,6 +22,7 @@ from app.models.user import User
 from app.services.asset_events import log_asset_event, snapshot
 from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import get_current_user, verify_csrf
+from app.services.storage import UploadError, delete_upload, save_upload
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/assets")
@@ -57,6 +58,17 @@ def _parse_interval(value: str | None) -> int | None:
         return None
     months = int(value.strip())
     return months if months > 0 else None
+
+
+async def _handle_images(db: Session, asset: Asset, files: list[UploadFile]):
+    for f in files:
+        if not f or not f.filename:
+            continue
+        try:
+            stored, orig = await save_upload(f)
+        except UploadError:
+            continue
+        db.add(AssetImage(asset_id=asset.id, filename=stored, orig_name=orig))
 
 
 @router.get("")
@@ -114,7 +126,7 @@ def new_asset(
 
 
 @router.post("/new")
-def create_asset(
+async def create_asset(
     request: Request,
     csrf_token: str = Form(...),
     uid: str = Form(...),
@@ -127,6 +139,7 @@ def create_asset(
     latitude: str = Form(""),
     longitude: str = Form(""),
     comment: str = Form(""),
+    images: list[UploadFile] = None,  # type: ignore[assignment]
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -161,6 +174,9 @@ def create_asset(
         comment=comment.strip() or None,
     )
     db.add(asset)
+    db.flush()
+    if images:
+        await _handle_images(db, asset, images)
     log_asset_event(db, user.id, asset, AssetEventAction.created)
     db.commit()
     flash(request, "asset.saved")
@@ -190,7 +206,7 @@ def edit_asset(
 
 
 @router.post("/{asset_id}/edit")
-def update_asset(
+async def update_asset(
     asset_id: int,
     request: Request,
     csrf_token: str = Form(...),
@@ -204,6 +220,7 @@ def update_asset(
     latitude: str = Form(""),
     longitude: str = Form(""),
     comment: str = Form(""),
+    images: list[UploadFile] = None,  # type: ignore[assignment]
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -237,6 +254,8 @@ def update_asset(
     asset.latitude = _parse_float(latitude)
     asset.longitude = _parse_float(longitude)
     asset.comment = comment.strip() or None
+    if images:
+        await _handle_images(db, asset, images)
     refresh_next_maintenance(db, asset.id)
     log_asset_event(db, user.id, asset, AssetEventAction.updated, before)
     db.commit()
@@ -262,6 +281,8 @@ def delete_asset(
         # Detach entries from the asset rather than deleting the history.
         for entry in list(asset.entries):
             entry.asset_id = None
+        for img in asset.images:
+            delete_upload(img.filename)
         # Pipe segments make no sense without both endpoints.
         db.execute(
             delete(PipeSegment).where(
@@ -275,4 +296,24 @@ def delete_asset(
         db.delete(asset)
         db.commit()
         flash(request, "asset.deleted")
+    return RedirectResponse("/assets", status_code=303)
+
+
+@router.post("/image/{image_id}/delete")
+def delete_asset_image(
+    image_id: int,
+    request: Request,
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    verify_csrf(request, csrf_token)
+    img = db.get(AssetImage, image_id)
+    asset_id = img.asset_id if img else None
+    if img:
+        delete_upload(img.filename)
+        db.delete(img)
+        db.commit()
+    if asset_id:
+        return RedirectResponse(f"/assets/{asset_id}/edit", status_code=303)
     return RedirectResponse("/assets", status_code=303)

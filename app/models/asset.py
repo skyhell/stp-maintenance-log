@@ -5,7 +5,7 @@ from __future__ import annotations
 import enum
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, Float, Integer, String, Text
+from sqlalchemy import Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -54,6 +54,9 @@ class Asset(Base):
     entries: Mapped[list[MaintenanceEntry]] = relationship(  # noqa: F821
         back_populates="asset"
     )
+    images: Mapped[list[AssetImage]] = relationship(
+        back_populates="asset", cascade="all, delete-orphan"
+    )
 
     # --- Reminder helpers ------------------------------------------------
     def maintenance_status(self, due_soon_days: int) -> str:
@@ -73,3 +76,20 @@ class Asset(Base):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Asset {self.uid} {self.name} ({self.type.value})>"
+
+
+class AssetImage(Base):
+    __tablename__ = "asset_images"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    asset_id: Mapped[int] = mapped_column(
+        ForeignKey("assets.id"), nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)  # stored name on disk
+    orig_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    asset: Mapped[Asset] = relationship(back_populates="images")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<AssetImage {self.filename}>"

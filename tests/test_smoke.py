@@ -711,6 +711,68 @@ def test_admin_only_pages():
         assert client.get("/plant/report.pdf", follow_redirects=False).status_code == 403
 
 
+def test_asset_images():
+    import re
+
+    # Minimal valid 1x1 PNG.
+    png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+        "0000000d49444154789c626001000000ffff03000006000557bfabd40000000049454e44ae426082"
+    )
+
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/assets/new")
+
+        # Create a shaft with an image attached.
+        r = client.post(
+            "/assets/new",
+            data={
+                "csrf_token": token,
+                "uid": "IMG-1",
+                "name": "Shaft with photo",
+                "type": "shaft",
+            },
+            files={"images": ("cover.png", png, "image/png")},
+            follow_redirects=False,
+        )
+        assert r.status_code == 303
+
+        # The thumbnail shows up on the edit form and is served via /media.
+        page = client.get("/assets").text
+        asset_id = re.search(r'/assets/(\d+)/edit"><strong>Shaft with photo', page).group(1)
+        edit_page = client.get(f"/assets/{asset_id}/edit").text
+        m = re.search(r'/media/([a-f0-9]+\.png)', edit_page)
+        assert m, "uploaded image not shown on the edit form"
+        assert client.get(f"/media/{m.group(1)}").status_code == 200
+
+        # Upload a second image on edit, then delete the first one.
+        client.post(
+            f"/assets/{asset_id}/edit",
+            data={
+                "csrf_token": token,
+                "uid": "IMG-1",
+                "name": "Shaft with photo",
+                "type": "shaft",
+            },
+            files={"images": ("second.png", png, "image/png")},
+            follow_redirects=False,
+        )
+        edit_page = client.get(f"/assets/{asset_id}/edit").text
+        assert len(re.findall(r'/media/[a-f0-9]+\.png', edit_page)) >= 2
+
+        img_id = re.search(r'/assets/image/(\d+)/delete', edit_page).group(1)
+        client.post(f"/assets/image/{img_id}/delete", data={"csrf_token": token})
+        edit_page = client.get(f"/assets/{asset_id}/edit").text
+        assert f"/assets/image/{img_id}/delete" not in edit_page
+
+        # Deleting the asset removes the remaining image file from disk.
+        m = re.search(r'/media/([a-f0-9]+\.png)', edit_page)
+        remaining = m.group(1)
+        client.post(f"/assets/{asset_id}/delete", data={"csrf_token": token})
+        assert client.get(f"/media/{remaining}").status_code == 404
+
+
 def test_admin_password_confirmation():
     with _client() as client:
         _login(client)

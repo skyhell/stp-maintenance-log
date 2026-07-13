@@ -10,7 +10,7 @@
 
 <form method="post"
       action="{{ '/assets/' ~ asset.id ~ '/edit' if asset else '/assets/new' }}"
-      class="card">
+      enctype="multipart/form-data" class="card">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <div class="field-row">
@@ -82,6 +82,29 @@
     <label for="comment">{{ t('asset.comment') }}</label>
     <textarea id="comment" name="comment">{{ asset.comment or '' if asset else '' }}</textarea>
   </div>
+
+  <div class="field">
+    <label for="images">{{ t('asset.add_images') }}</label>
+    <input type="file" id="images" name="images" accept="image/*" multiple capture="environment">
+  </div>
+
+  {% if asset and asset.images %}
+  <div class="field">
+    <label>{{ t('asset.images') }}</label>
+    <div class="entry-thumbs">
+      {% for img in asset.images %}
+      <div style="text-align:center;">
+        <a href="/media/{{ img.filename }}" target="_blank"><img src="/media/{{ img.filename }}" alt="{{ img.orig_name }}"></a>
+        <form method="post" action="/assets/image/{{ img.id }}/delete" class="inline-form"
+              onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <div class="flex" style="margin-top:8px;">
     <button class="btn" type="submit">{{ t('common.save') }}</button>
