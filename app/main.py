@@ -15,7 +15,7 @@ from app import __version__
 from app.config import BASE_DIR, settings
 from app.database import SessionLocal, init_db
 from app.models.user import User, UserRole
-from app.routers import account, admin, assets, auth, dashboard, entries, plant
+from app.routers import account, admin, assets, auth, dashboard, entries, measurements, plant
 from app.routers import map as map_router
 from app.services.security import get_current_user, hash_password
 from app.services.templating import render
@@ -70,6 +70,13 @@ def _migrate_schema() -> None:
         if "maintenance_interval_months" not in cols:
             conn.execute(
                 text("ALTER TABLE assets ADD COLUMN maintenance_interval_months INTEGER")
+            )
+        cols = {
+            row[1] for row in conn.execute(text("PRAGMA table_info(maintenance_entries)"))
+        }
+        if "operating_hours" not in cols:
+            conn.execute(
+                text("ALTER TABLE maintenance_entries ADD COLUMN operating_hours FLOAT")
             )
 
 
@@ -140,6 +147,7 @@ def media(
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(entries.router)
+app.include_router(measurements.router)
 app.include_router(assets.router)
 app.include_router(plant.router)
 app.include_router(map_router.router)

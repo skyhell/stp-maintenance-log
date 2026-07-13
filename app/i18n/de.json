@@ -4,6 +4,7 @@
 
   "nav.dashboard": "Dashboard",
   "nav.entries": "Wartungseinträge",
+  "nav.measurements": "Messwerte",
   "nav.plant": "Anlage",
   "nav.assets": "Objekte",
   "nav.map": "Karte",
@@ -73,6 +74,20 @@
   "entry.filter_from": "Von",
   "entry.filter_to": "Bis",
   "entry.filter_text": "Textsuche",
+  "entry.operating_hours": "Betriebsstunden-Zählerstand",
+
+  "measure.title": "Messwerte",
+  "measure.new": "Neuer Messwert",
+  "measure.edit": "Messwert bearbeiten",
+  "measure.datetime": "Datum / Uhrzeit",
+  "measure.parameter": "Messung",
+  "measure.parameter_hint": "Auswählen oder neue Messung eintippen (z. B. NH4) – sie wird automatisch gespeichert.",
+  "measure.value": "Messwert",
+  "measure.temperature": "Temperatur (°C)",
+  "measure.operating_hours": "Betriebsstunden-Zählerstand",
+  "measure.no_data": "Noch keine Messwerte erfasst.",
+  "measure.saved": "Messwert gespeichert.",
+  "measure.deleted": "Messwert gelöscht.",
 
   "asset.title": "Objekte",
   "asset.new": "Neues Objekt",

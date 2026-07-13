@@ -4,6 +4,7 @@
 
   "nav.dashboard": "Dashboard",
   "nav.entries": "Maintenance Entries",
+  "nav.measurements": "Measurements",
   "nav.plant": "Plant",
   "nav.assets": "Objects",
   "nav.map": "Map",
@@ -73,6 +74,20 @@
   "entry.filter_from": "From",
   "entry.filter_to": "To",
   "entry.filter_text": "Text search",
+  "entry.operating_hours": "Operating-hours counter",
+
+  "measure.title": "Measurements",
+  "measure.new": "New measurement",
+  "measure.edit": "Edit measurement",
+  "measure.datetime": "Date / time",
+  "measure.parameter": "Measurement",
+  "measure.parameter_hint": "Select or type a new measurement (e.g. NH4) – it is saved automatically.",
+  "measure.value": "Value",
+  "measure.temperature": "Temperature (°C)",
+  "measure.operating_hours": "Operating-hours counter",
+  "measure.no_data": "No measurements recorded yet.",
+  "measure.saved": "Measurement saved.",
+  "measure.deleted": "Measurement deleted.",
 
   "asset.title": "Objects",
   "asset.new": "New object",

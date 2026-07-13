@@ -44,6 +44,15 @@ def _parse_date(value: str | None) -> date | None:
         return None
 
 
+def _parse_float(value: str | None) -> float | None:
+    if value is None or value.strip() == "":
+        return None
+    try:
+        return float(value.replace(",", "."))
+    except ValueError:
+        return None
+
+
 def _filtered_entries(
     db: Session,
     asset_id: str | None,
@@ -201,6 +210,7 @@ async def create_entry(
     description: str = Form(""),
     notes: str = Form(""),
     comment: str = Form(""),
+    operating_hours: str = Form(""),
     images: list[UploadFile] = None,  # type: ignore[assignment]
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -216,6 +226,7 @@ async def create_entry(
         description=description.strip() or None,
         notes=notes.strip() or None,
         comment=comment.strip() or None,
+        operating_hours=_parse_float(operating_hours),
     )
     db.add(entry)
     db.flush()
@@ -262,6 +273,7 @@ async def update_entry(
     description: str = Form(""),
     notes: str = Form(""),
     comment: str = Form(""),
+    operating_hours: str = Form(""),
     images: list[UploadFile] = None,  # type: ignore[assignment]
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -279,6 +291,7 @@ async def update_entry(
     entry.description = description.strip() or None
     entry.notes = notes.strip() or None
     entry.comment = comment.strip() or None
+    entry.operating_hours = _parse_float(operating_hours)
     if images:
         await _handle_images(db, entry, images)
     db.flush()

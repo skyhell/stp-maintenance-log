@@ -60,6 +60,7 @@
         <span>👤 {{ e.user.username if e.user else '—' }}</span>
         {% if e.activity %}<strong style="color:var(--text)">{{ e.activity.name }}</strong>{% endif %}
         {% if e.asset %}<span>· {{ m.asset_type_badge(e.asset, t) }} {{ e.asset.name }}</span>{% endif %}
+        {% if e.operating_hours is not none %}<span>⏱ {{ e.operating_hours }} h</span>{% endif %}
         <span class="spacer"></span>
         <a href="/entries/{{ e.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
         <form method="post" action="/entries/{{ e.id }}/delete" class="inline-form"

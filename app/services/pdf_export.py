@@ -86,6 +86,8 @@ def build_history_pdf(
             details.append(f"📝 {e.notes}")
         if e.comment:
             details.append(f"💬 {e.comment}")
+        if e.operating_hours is not None:
+            details.append(f"{t('entry.operating_hours')}: {e.operating_hours} h")
         asset_txt = ""
         if e.asset:
             asset_txt = f"{e.asset.name} ({e.asset.uid})"

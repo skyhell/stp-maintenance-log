@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ t('measure.new') if not measurement else t('measure.edit') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('measure.new') if not measurement else t('measure.edit') }}</h1>
+  <a href="/measurements" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+</div>
+
+<form method="post"
+      action="{{ '/measurements/' ~ measurement.id ~ '/edit' if measurement else '/measurements/new' }}"
+      class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="field-row">
+    <div class="field">
+      <label for="measured_at">{{ t('measure.datetime') }}</label>
+      <input type="datetime-local" id="measured_at" name="measured_at" value="{{ now }}">
+    </div>
+    <div class="field">
+      <label for="parameter">{{ t('measure.parameter') }} <span class="muted">({{ t('common.required') }})</span></label>
+      <input id="parameter" name="parameter" list="parameter-list" required autocomplete="off"
+             placeholder="NH4" value="{{ measurement.parameter if measurement else '' }}">
+      <datalist id="parameter-list">
+        {% for p in parameters %}<option value="{{ p }}">{% endfor %}
+      </datalist>
+      <div class="hint">{{ t('measure.parameter_hint') }}</div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="value">{{ t('measure.value') }}</label>
+      <input id="value" name="value" inputmode="decimal"
+             value="{{ measurement.value if measurement and measurement.value is not none else '' }}">
+    </div>
+    <div class="field">
+      <label for="temperature">{{ t('measure.temperature') }}</label>
+      <input id="temperature" name="temperature" inputmode="decimal"
+             value="{{ measurement.temperature if measurement and measurement.temperature is not none else '' }}">
+    </div>
+    <div class="field">
+      <label for="operating_hours">{{ t('measure.operating_hours') }}</label>
+      <input id="operating_hours" name="operating_hours" inputmode="decimal"
+             value="{{ measurement.operating_hours if measurement and measurement.operating_hours is not none else '' }}">
+    </div>
+  </div>
+
+  <div class="flex" style="margin-top:8px;">
+    <button class="btn" type="submit">{{ t('common.save') }}</button>
+    <a href="/measurements" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+  </div>
+</form>
+{% endblock %}

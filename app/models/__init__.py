@@ -3,6 +3,7 @@
 from app.models.activity import Activity
 from app.models.asset import Asset, AssetType
 from app.models.maintenance import EntryImage, MaintenanceEntry
+from app.models.measurement import Measurement
 from app.models.pipe import PipeSegment
 from app.models.user import User, UserRole
 
@@ -12,6 +13,7 @@ __all__ = [
     "AssetType",
     "EntryImage",
     "MaintenanceEntry",
+    "Measurement",
     "PipeSegment",
     "User",
     "UserRole",

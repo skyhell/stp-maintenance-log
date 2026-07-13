@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ t('measure.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('measure.title') }}</h1>
+  <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
+</div>
+
+<form method="get" action="/measurements" class="card" style="margin-bottom:16px;">
+  <div class="field-row">
+    <div class="field">
+      <label>{{ t('measure.parameter') }}</label>
+      <select name="parameter">
+        <option value="">{{ t('common.all') }}</option>
+        {% for p in parameters %}
+        <option value="{{ p }}" {% if filter_parameter == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="flex flex-wrap">
+    <button class="btn btn-sm" type="submit">{{ t('common.filter') }}</button>
+    <a href="/measurements" class="btn btn-secondary btn-sm">{{ t('common.reset') }}</a>
+  </div>
+</form>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>{{ t('measure.datetime') }}</th>
+        <th>{{ t('measure.parameter') }}</th>
+        <th>{{ t('measure.value') }}</th>
+        <th>{{ t('measure.temperature') }}</th>
+        <th>{{ t('measure.operating_hours') }}</th>
+        <th>{{ t('entry.user') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in measurements %}
+      <tr>
+        <td>{{ m.measured_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td><strong>{{ m.parameter }}</strong></td>
+        <td>{{ m.value if m.value is not none else '—' }}</td>
+        <td>{{ m.temperature if m.temperature is not none else '—' }}</td>
+        <td>{{ m.operating_hours if m.operating_hours is not none else '—' }}</td>
+        <td>{{ m.user.username if m.user else '—' }}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <a href="/measurements/{{ m.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+          <form method="post" action="/measurements/{{ m.id }}/delete" class="inline-form"
+                onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7"><div class="empty"><span class="emoji">🧪</span>{{ t('measure.no_data') }}</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
