@@ -38,7 +38,7 @@
         <td>{{ m.asset_type_badge(a, t) }}</td>
         <td>
           {% if a.next_maintenance_date %}
-          {{ a.next_maintenance_date }} {{ m.status_badge(status, t) }}
+          {{ a.next_maintenance_date|dmy }} {{ m.status_badge(status, t) }}
           {% else %}<span class="muted">—</span>{% endif %}
           {% if a.maintenance_interval_months %}
           <span class="muted text-sm">↻ {{ t('asset.interval_short', n=a.maintenance_interval_months) }}</span>

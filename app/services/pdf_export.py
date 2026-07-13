@@ -61,9 +61,9 @@ def build_history_pdf(
 
     rng = []
     if date_from:
-        rng.append(f"{t('entry.filter_from')}: {date_from.isoformat()}")
+        rng.append(f"{t('entry.filter_from')}: {date_from.strftime('%d/%m/%Y')}")
     if date_to:
-        rng.append(f"{t('entry.filter_to')}: {date_to.isoformat()}")
+        rng.append(f"{t('entry.filter_to')}: {date_to.strftime('%d/%m/%Y')}")
     rng.append(f"{t('dashboard.total_entries')}: {len(entries)}")
     story.append(Paragraph(" &nbsp;·&nbsp; ".join(rng), sub_style))
     story.append(Spacer(1, 8))
@@ -93,7 +93,7 @@ def build_history_pdf(
             asset_txt = f"{e.asset.name} ({e.asset.uid})"
         data.append(
             [
-                _p(e.occurred_at.strftime("%Y-%m-%d %H:%M"), cell),
+                _p(e.occurred_at.strftime("%d/%m/%Y %H:%M"), cell),
                 _p(e.user.username if e.user else "—", cell),
                 _p(e.activity.name if e.activity else "—", cell),
                 _p(asset_txt or "—", cell),

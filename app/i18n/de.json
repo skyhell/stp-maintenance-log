@@ -32,6 +32,8 @@
   "common.optional": "optional",
   "common.required": "Pflichtfeld",
   "common.close": "Schließen",
+  "common.date": "Datum",
+  "common.time": "Uhrzeit (24 h)",
 
   "footer.docs": "Dokumentation",
   "theme.toggle": "Design wechseln",

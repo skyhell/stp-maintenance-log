@@ -465,6 +465,7 @@ def test_measurements_crud_and_filter():
         assert "<strong>NH4</strong>" in page
         assert "<strong>O2</strong>" in page
         assert "1.8" in page and "14.5" in page and "1234.5" in page
+        assert "01/07/2024 09:00" in page  # dd/mm/YYYY, 24h
 
         # Value, temperature and counter reading are mandatory.
         r = client.post(
@@ -520,11 +521,14 @@ def test_entry_operating_hours():
     with _client() as client:
         _login(client)
         token = _csrf(client, "/entries/new")
+        # The form posts separate date + time fields (24h) since the
+        # datetime-local picker rendered AM/PM in some browser locales.
         client.post(
             "/entries/new",
             data={
                 "csrf_token": token,
-                "occurred_at": "2024-07-02T10:00",
+                "occurred_date": "2024-07-02",
+                "occurred_time": "15:30",
                 "activity": "Zählerablesung",
                 "description": "counter check",
                 "operating_hours": "512,5",
@@ -534,6 +538,8 @@ def test_entry_operating_hours():
         page = client.get("/entries").text
         assert "counter check" in page
         assert "512.5" in page
+        # Dates are displayed as dd/mm/YYYY with a 24h time.
+        assert "02/07/2024 15:30" in page
 
         # The counter reading is mandatory: missing value is rejected.
         r = client.post(

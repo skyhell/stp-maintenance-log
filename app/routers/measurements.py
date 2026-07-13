@@ -38,6 +38,15 @@ def _parse_float(value: str | None) -> float | None:
         return None
 
 
+def _combine_dt(raw: str, date_part: str, time_part: str) -> str:
+    """Join separate date + time inputs; a full datetime string wins."""
+    if raw:
+        return raw
+    if not date_part:
+        return ""
+    return f"{date_part}T{time_part}" if time_part else date_part
+
+
 def _parameters(db: Session) -> list[str]:
     """Self-building parameter list, most recently used first (like activities)."""
     return list(
@@ -126,6 +135,8 @@ def create_measurement(
     request: Request,
     csrf_token: str = Form(...),
     measured_at: str = Form(""),
+    measured_date: str = Form(""),
+    measured_time: str = Form(""),
     parameter: str = Form(...),
     value: str = Form(""),
     temperature: str = Form(""),
@@ -134,6 +145,7 @@ def create_measurement(
     user: User = Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token)
+    measured_at = _combine_dt(measured_at, measured_date, measured_time)
     parameter = parameter.strip()
     value_f = _parse_float(value)
     temperature_f = _parse_float(temperature)
@@ -191,6 +203,8 @@ def update_measurement(
     request: Request,
     csrf_token: str = Form(...),
     measured_at: str = Form(""),
+    measured_date: str = Form(""),
+    measured_time: str = Form(""),
     parameter: str = Form(...),
     value: str = Form(""),
     temperature: str = Form(""),
@@ -199,6 +213,7 @@ def update_measurement(
     user: User = Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token)
+    measured_at = _combine_dt(measured_at, measured_date, measured_time)
     measurement = db.get(Measurement, measurement_id)
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")

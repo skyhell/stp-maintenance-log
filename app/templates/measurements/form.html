@@ -15,8 +15,14 @@
 
   <div class="field-row">
     <div class="field">
-      <label for="measured_at">{{ t('measure.datetime') }}</label>
-      <input type="datetime-local" id="measured_at" name="measured_at" value="{{ now }}">
+      <label for="measured_date">{{ t('common.date') }}</label>
+      <input type="date" id="measured_date" name="measured_date" value="{{ now[:10] }}">
+    </div>
+    <div class="field">
+      <label for="measured_time">{{ t('common.time') }}</label>
+      <input type="text" id="measured_time" name="measured_time" value="{{ now[11:16] }}"
+             pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM"
+             inputmode="numeric" maxlength="5" autocomplete="off">
     </div>
     <div class="field">
       <label for="parameter">{{ t('measure.parameter') }} <span class="muted">({{ t('common.required') }})</span></label>

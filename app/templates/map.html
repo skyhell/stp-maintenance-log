@@ -72,7 +72,10 @@
       '<span style="color:#888">' + escapeHtml(a.uid) + ' · ' +
       (typeLabels[a.type] || a.type) + '</span>';
     if (a.address) html += '<br>' + escapeHtml(a.address);
-    if (a.next_maintenance) html += '<br>' + L10N.next + ': ' + a.next_maintenance;
+    if (a.next_maintenance) {
+      // ISO yyyy-mm-dd from the API -> dd/mm/yyyy for display.
+      html += '<br>' + L10N.next + ': ' + a.next_maintenance.split("-").reverse().join("/");
+    }
     // The plant page is admin-only; hide its edit link for other users.
     if (a.type !== "plant" || IS_ADMIN) {
       html += '<br><a href="' + editHref(a) + '">✎</a>';

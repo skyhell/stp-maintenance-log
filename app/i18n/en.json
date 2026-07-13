@@ -32,6 +32,8 @@
   "common.optional": "optional",
   "common.required": "required",
   "common.close": "Close",
+  "common.date": "Date",
+  "common.time": "Time (24h)",
 
   "footer.docs": "Documentation",
   "theme.toggle": "Toggle theme",

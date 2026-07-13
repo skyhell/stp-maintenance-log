@@ -53,6 +53,15 @@ def _parse_float(value: str | None) -> float | None:
         return None
 
 
+def _combine_dt(raw: str, date_part: str, time_part: str) -> str:
+    """Join separate date + time inputs; a full datetime string wins."""
+    if raw:
+        return raw
+    if not date_part:
+        return ""
+    return f"{date_part}T{time_part}" if time_part else date_part
+
+
 def _filtered_entries(
     db: Session,
     asset_id: str | None,
@@ -231,6 +240,8 @@ async def create_entry(
     request: Request,
     csrf_token: str = Form(...),
     occurred_at: str = Form(""),
+    occurred_date: str = Form(""),
+    occurred_time: str = Form(""),
     asset_id: str = Form(""),
     activity: str = Form(""),
     description: str = Form(""),
@@ -242,6 +253,7 @@ async def create_entry(
     user: User = Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token)
+    occurred_at = _combine_dt(occurred_at, occurred_date, occurred_time)
 
     operating_hours_f = _parse_float(operating_hours)
     if operating_hours_f is None:
@@ -306,6 +318,8 @@ async def update_entry(
     request: Request,
     csrf_token: str = Form(...),
     occurred_at: str = Form(""),
+    occurred_date: str = Form(""),
+    occurred_time: str = Form(""),
     asset_id: str = Form(""),
     activity: str = Form(""),
     description: str = Form(""),
@@ -317,6 +331,7 @@ async def update_entry(
     user: User = Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token)
+    occurred_at = _combine_dt(occurred_at, occurred_date, occurred_time)
     entry = db.get(MaintenanceEntry, entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")

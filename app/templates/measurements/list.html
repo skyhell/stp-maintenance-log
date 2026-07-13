@@ -40,7 +40,7 @@
     <tbody>
       {% for m in measurements %}
       <tr>
-        <td>{{ m.measured_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ m.measured_at|dmy_hm }}</td>
         <td><strong>{{ m.parameter }}</strong></td>
         <td>{{ m.value if m.value is not none else '—' }}</td>
         <td>{{ m.temperature if m.temperature is not none else '—' }}</td>

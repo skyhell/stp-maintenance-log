@@ -30,7 +30,7 @@
       <div class="entry-item flex" style="justify-content:space-between;">
         <div>
           <a href="/assets/{{ a.id }}/edit"><strong>{{ a.name }}</strong></a>
-          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date }}</div>
+          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date|dmy }}</div>
         </div>
         <span class="badge badge-overdue">{{ t('dashboard.overdue') }}</span>
       </div>
@@ -39,7 +39,7 @@
       <div class="entry-item flex" style="justify-content:space-between;">
         <div>
           <a href="/assets/{{ a.id }}/edit"><strong>{{ a.name }}</strong></a>
-          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date }}</div>
+          <div class="muted text-sm">{{ a.uid }} · {{ a.next_maintenance_date|dmy }}</div>
         </div>
         <span class="badge badge-due_soon">{{ t('dashboard.due_soon') }}</span>
       </div>
@@ -55,7 +55,7 @@
       {% for e in recent %}
       <div class="entry-item">
         <div class="entry-meta">
-          <span>{{ e.occurred_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          <span>{{ e.occurred_at|dmy_hm }}</span>
           {% if e.activity %}· <strong style="color:var(--text)">{{ e.activity.name }}</strong>{% endif %}
           {% if e.asset %}· {{ e.asset.name }}{% endif %}
         </div>
@@ -74,7 +74,7 @@
       {% for mm in recent_measurements %}
       <div class="entry-item">
         <div class="entry-meta">
-          <span>{{ mm.measured_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          <span>{{ mm.measured_at|dmy_hm }}</span>
           · <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}
           {% if mm.temperature is not none %}· 🌡 {{ mm.temperature }} °C{% endif %}
           {% if mm.operating_hours is not none %}· ⏱ {{ mm.operating_hours }} h{% endif %}

@@ -16,8 +16,14 @@
 
   <div class="field-row">
     <div class="field">
-      <label for="occurred_at">{{ t('entry.datetime') }}</label>
-      <input type="datetime-local" id="occurred_at" name="occurred_at" value="{{ now }}">
+      <label for="occurred_date">{{ t('common.date') }}</label>
+      <input type="date" id="occurred_date" name="occurred_date" value="{{ now[:10] }}">
+    </div>
+    <div class="field">
+      <label for="occurred_time">{{ t('common.time') }}</label>
+      <input type="text" id="occurred_time" name="occurred_time" value="{{ now[11:16] }}"
+             pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM"
+             inputmode="numeric" maxlength="5" autocomplete="off">
     </div>
     <div class="field">
       <label for="asset_id">{{ t('entry.asset') }}</label>

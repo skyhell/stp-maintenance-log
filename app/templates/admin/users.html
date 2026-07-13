@@ -60,7 +60,7 @@
         <td>{{ t('admin.role.' + u.role.value) }}</td>
         <td>{% if u.is_active %}✅{% else %}⛔{% endif %}</td>
         <td>{% if u.totp_enabled %}🔒{% else %}—{% endif %}</td>
-        <td class="muted text-sm">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+        <td class="muted text-sm">{{ u.created_at|dmy }}</td>
         <td style="text-align:right;">
           <button class="btn-ghost btn btn-sm" type="button"
                   @click="editId = (editId === {{ u.id }} ? null : {{ u.id }})">{{ t('common.edit') }}</button>

@@ -24,6 +24,20 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.globals["app_version"] = __version__
 
 
+def _fmt_date(value) -> str:
+    """Display dates as dd/mm/YYYY everywhere."""
+    return value.strftime("%d/%m/%Y") if value else ""
+
+
+def _fmt_datetime(value) -> str:
+    """Display datetimes as dd/mm/YYYY HH:MM (24h) everywhere."""
+    return value.strftime("%d/%m/%Y %H:%M") if value else ""
+
+
+templates.env.filters["dmy"] = _fmt_date
+templates.env.filters["dmy_hm"] = _fmt_datetime
+
+
 def current_lang(request: Request) -> str:
     return normalize_lang(request.cookies.get(LANGUAGE_COOKIE))
 
