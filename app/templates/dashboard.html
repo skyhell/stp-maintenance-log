@@ -78,9 +78,9 @@
       <div class="entry-item">
         <div class="entry-meta">
           <span>{{ mm.measured_at|dmy_hm }}</span>
-          · <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}
-          {% if mm.temperature is not none %}· 🌡 {{ mm.temperature }} °C{% endif %}
-          {% if mm.operating_hours is not none %}· ⏱ {{ mm.operating_hours }} h{% endif %}
+          <span>· <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}</span>
+          {% if mm.temperature is not none %}<span>· 🌡 {{ mm.temperature }} °C</span>{% endif %}
+          {% if mm.operating_hours is not none %}<span>· ⏱ {{ mm.operating_hours }} h</span>{% endif %}
         </div>
       </div>
       {% endfor %}

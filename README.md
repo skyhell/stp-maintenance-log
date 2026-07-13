@@ -44,13 +44,17 @@ no external CDN, no API keys.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-| Maintenance history | Map view |
-|---------------------|----------|
-| ![History](docs/screenshots/entry.png) | ![Map](docs/screenshots/map.png) |
+| Maintenance history | Measurements |
+|---------------------|--------------|
+| ![History](docs/screenshots/entry.png) | ![Measurements](docs/screenshots/measurements.png) |
 
-| Asset management | Dark mode |
-|------------------|-----------|
-| ![Assets](docs/screenshots/assets.png) | ![Dark mode](docs/screenshots/dashboard-dark.png) |
+| Map view with pipes | Object management |
+|---------------------|-------------------|
+| ![Map](docs/screenshots/map.png) | ![Objects](docs/screenshots/assets.png) |
+
+**Dark mode** — persistent, follows your preference:
+
+![Dark mode](docs/screenshots/dashboard-dark.png)
 
 ---
 
