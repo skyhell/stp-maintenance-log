@@ -21,7 +21,7 @@
     })();
   </script>
 </head>
-<body>
+<body data-pw-show="{{ t('password.show') }}" data-pw-hide="{{ t('password.hide') }}">
   {% if current_user %}
   <nav class="nav">
     <a href="/" class="nav-brand">💧 <span>{{ t('app.short') }}</span></a>

@@ -116,4 +116,41 @@
       });
     }
   });
+
+  // ---------- Password visibility (same mechanism as fleetbox) ----------
+  // Wrap every password field and inject a show/hide toggle. Done from JS so
+  // the button only exists when it can work.
+  document.addEventListener("DOMContentLoaded", function () {
+    const body = document.body;
+    const EYE =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const EYE_OFF =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><line x1="4" y1="4" x2="20" y2="20"/></svg>';
+    const showLabel = body.dataset.pwShow || "Show password";
+    const hideLabel = body.dataset.pwHide || "Hide password";
+
+    document.querySelectorAll('input[type="password"]').forEach(function (input) {
+      const wrap = document.createElement("span");
+      wrap.className = "pw-field";
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "pw-toggle";
+      toggle.innerHTML = EYE;
+      toggle.setAttribute("aria-label", showLabel);
+      toggle.title = showLabel;
+      wrap.appendChild(toggle);
+
+      toggle.addEventListener("click", function () {
+        const makeVisible = input.type === "password";
+        input.type = makeVisible ? "text" : "password";
+        toggle.innerHTML = makeVisible ? EYE_OFF : EYE;
+        toggle.setAttribute("aria-label", makeVisible ? hideLabel : showLabel);
+        toggle.title = makeVisible ? hideLabel : showLabel;
+        input.focus();
+      });
+    });
+  });
 })();
