@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}{{ t('app.title') }}{% endblock %}</title>
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ app_version }}">
   <style>[x-cloak]{display:none!important;}</style>
   {% block head %}{% endblock %}
   <script>
@@ -64,7 +64,7 @@
     <a href="https://github.com/skyhell/stp-maintenance-log#readme" target="_blank" rel="noopener">{{ t('footer.docs') }}</a>
   </footer>
 
-  <script src="/static/js/app.js"></script>
+  <script src="/static/js/app.js?v={{ app_version }}"></script>
   {% if current_user %}<script src="/static/vendor/alpine.min.js" defer></script>{% endif %}
   {% block scripts %}{% endblock %}
 </body>
