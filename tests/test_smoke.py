@@ -629,6 +629,15 @@ def test_plant_report_pdf():
         assert r.headers["content-type"] == "application/pdf"
         assert r.content[:5] == b"%PDF-"
 
+        # Time-range variants: quick-select year, custom range, empty year.
+        r = client.get("/report.pdf?year=2024")
+        assert r.status_code == 200 and r.content[:5] == b"%PDF-"
+        assert "plant-report_2024" in r.headers["content-disposition"]
+        r = client.get("/report.pdf?date_from=2024-08-01&date_to=2024-08-31")
+        assert r.status_code == 200 and r.content[:5] == b"%PDF-"
+        r = client.get("/report.pdf?year=1999")
+        assert r.status_code == 200 and r.content[:5] == b"%PDF-"
+
 
 def test_admin_only_pages():
     with _client() as client:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
@@ -80,46 +80,121 @@ def dashboard(
             "recent_measurements": recent_measurements,
             "total_assets": total_assets,
             "total_entries": total_entries,
+            "report_years": _data_years(db),
         },
         db=db,
         user=user,
     )
 
 
+def _data_years(db: Session) -> list[int]:
+    """Years covered by any data, newest first, for the report quick select."""
+    mins = [
+        db.scalar(select(func.min(MaintenanceEntry.occurred_at))),
+        db.scalar(select(func.min(Measurement.measured_at))),
+        db.scalar(select(func.min(AssetEvent.occurred_at))),
+    ]
+    first = min((m.year for m in mins if m is not None), default=date.today().year)
+    return list(range(date.today().year, first - 1, -1))
+
+
+def _parse_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
 @router.get("/report.pdf")
 def plant_report(
     request: Request,
+    year: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Chronological full report: entries, measurements and asset changes."""
+    """Chronological full report: entries, measurements and asset changes.
+
+    Time range: a quick-select ``year`` wins over explicit ``date_from``/
+    ``date_to``; with neither given the report covers everything.
+    """
+    if year and year.isdigit():
+        y = int(year)
+        df, dt_ = date(y, 1, 1), date(y, 12, 31)
+    else:
+        df, dt_ = _parse_date(date_from), _parse_date(date_to)
+    start = datetime.combine(df, time.min, UTC) if df else None
+    end = datetime.combine(dt_, time.max, UTC) if dt_ else None
+
+    def in_range(stmt, column):
+        if start is not None:
+            stmt = stmt.where(column >= start)
+        if end is not None:
+            stmt = stmt.where(column <= end)
+        return stmt
+
     plant = db.scalar(select(Asset).where(Asset.type == AssetType.plant))
     entries = list(
         db.scalars(
-            select(MaintenanceEntry).options(
-                selectinload(MaintenanceEntry.user),
-                selectinload(MaintenanceEntry.activity),
-                selectinload(MaintenanceEntry.asset),
-                selectinload(MaintenanceEntry.images),
+            in_range(
+                select(MaintenanceEntry).options(
+                    selectinload(MaintenanceEntry.user),
+                    selectinload(MaintenanceEntry.activity),
+                    selectinload(MaintenanceEntry.asset),
+                    selectinload(MaintenanceEntry.images),
+                ),
+                MaintenanceEntry.occurred_at,
             )
         ).all()
     )
     measurements = list(
-        db.scalars(select(Measurement).options(selectinload(Measurement.user))).all()
+        db.scalars(
+            in_range(
+                select(Measurement).options(selectinload(Measurement.user)),
+                Measurement.measured_at,
+            )
+        ).all()
     )
     events = list(
-        db.scalars(select(AssetEvent).options(selectinload(AssetEvent.user))).all()
+        db.scalars(
+            in_range(
+                select(AssetEvent).options(selectinload(AssetEvent.user)),
+                AssetEvent.occurred_at,
+            )
+        ).all()
     )
+    object_counts = {
+        "shafts": db.scalar(
+            select(func.count(Asset.id)).where(Asset.type == AssetType.shaft)
+        )
+        or 0,
+        "connections": db.scalar(
+            select(func.count(Asset.id)).where(Asset.type == AssetType.connection)
+        )
+        or 0,
+    }
 
     lang = normalize_lang(request.cookies.get(LANGUAGE_COOKIE))
     pdf = build_plant_report(
-        plant.name if plant else "—",
+        plant,
+        object_counts,
         entries,
         measurements,
         events,
         get_translator(lang),
+        range_from=df,
+        range_to=dt_,
     )
     filename = f"plant-report_{date.today().isoformat()}"
+    if year and year.isdigit():
+        filename = f"plant-report_{year}"
+    elif df or dt_:
+        from_part = df.isoformat() if df else "start"
+        to_part = dt_.isoformat() if dt_ else "end"
+        filename = f"plant-report_{from_part}_{to_part}"
     return Response(
         content=pdf,
         media_type="application/pdf",
