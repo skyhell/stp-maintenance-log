@@ -490,6 +490,20 @@ def test_measurements_crud_and_filter():
         assert "<strong>NH4</strong>" in filtered
         assert "<strong>O2</strong>" not in filtered
 
+        # Filter by date range (both measurements are on 2024-07-01).
+        filtered = client.get(
+            "/measurements?date_from=2024-07-01&date_to=2024-07-01"
+        ).text
+        assert "<strong>NH4</strong>" in filtered and "<strong>O2</strong>" in filtered
+        filtered = client.get("/measurements?date_from=2024-07-02").text
+        assert "<strong>NH4</strong>" not in filtered
+
+        # Quick-select year wins over the range fields.
+        filtered = client.get("/measurements?year=2024&date_from=2025-01-01").text
+        assert "<strong>NH4</strong>" in filtered
+        filtered = client.get("/measurements?year=2023").text
+        assert "<strong>NH4</strong>" not in filtered
+
         # Edit the first measurement.
         mid = re.search(r'/measurements/(\d+)/edit', page).group(1)
         client.post(

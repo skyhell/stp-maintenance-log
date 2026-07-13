@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -38,6 +38,15 @@ def _parse_float(value: str | None) -> float | None:
         return None
 
 
+def _parse_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
 def _combine_dt(raw: str, date_part: str, time_part: str) -> str:
     """Join separate date + time inputs; a full datetime string wins."""
     if raw:
@@ -58,10 +67,20 @@ def _parameters(db: Session) -> list[str]:
     )
 
 
+def _data_years(db: Session) -> list[int]:
+    """Years covered by measurements, newest first, for the quick select."""
+    first_dt = db.scalar(select(func.min(Measurement.measured_at)))
+    first = first_dt.year if first_dt is not None else date.today().year
+    return list(range(date.today().year, first - 1, -1))
+
+
 @router.get("")
 def list_measurements(
     request: Request,
     parameter: str | None = None,
+    year: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -72,6 +91,19 @@ def list_measurements(
     )
     if parameter:
         stmt = stmt.where(Measurement.parameter == parameter)
+
+    # Quick-select year wins over an explicit from/to range (like the report).
+    selected_year = year if year and year.isdigit() else ""
+    if selected_year:
+        y = int(selected_year)
+        df, dt_ = date(y, 1, 1), date(y, 12, 31)
+    else:
+        df, dt_ = _parse_date(date_from), _parse_date(date_to)
+    if df:
+        stmt = stmt.where(Measurement.measured_at >= datetime.combine(df, time.min, UTC))
+    if dt_:
+        stmt = stmt.where(Measurement.measured_at <= datetime.combine(dt_, time.max, UTC))
+
     measurements = list(db.scalars(stmt).all())
     return render(
         request,
@@ -79,7 +111,13 @@ def list_measurements(
         {
             "measurements": measurements,
             "parameters": _parameters(db),
-            "filter_parameter": parameter or "",
+            "years": _data_years(db),
+            "filters": {
+                "parameter": parameter or "",
+                "year": selected_year,
+                "date_from": date_from or "",
+                "date_to": date_to or "",
+            },
         },
         db=db,
         user=user,
