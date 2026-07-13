@@ -243,15 +243,6 @@ def test_map_place_object():
         assert r.status_code == 403
 
 
-def test_pdf_export():
-    with _client() as client:
-        _login(client)
-        r = client.get("/entries/export.pdf")
-        assert r.status_code == 200
-        assert r.headers["content-type"] == "application/pdf"
-        assert r.content[:5] == b"%PDF-"
-
-
 def _create_asset(client, uid, name="A", type_="shaft"):
     token = _csrf(client, "/assets/new")
     return client.post(
@@ -555,9 +546,87 @@ def test_entry_operating_hours():
         assert r.status_code == 400
         assert "no counter" not in client.get("/entries").text
 
-        # The PDF export still works with the new column.
-        r = client.get("/entries/export.pdf")
+
+def test_plant_report_pdf():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/assets/new")
+
+        # An object is created and then edited -> two change-log events.
+        client.post(
+            "/assets/new",
+            data={
+                "csrf_token": token,
+                "uid": "REP-1",
+                "name": "Report Shaft",
+                "type": "shaft",
+            },
+            follow_redirects=False,
+        )
+        from app.database import SessionLocal
+        from app.models import Asset, AssetEvent, AssetEventAction
+
+        with SessionLocal() as db:
+            from sqlalchemy import select as sa_select
+
+            asset_id = db.scalar(sa_select(Asset.id).where(Asset.uid == "REP-1"))
+        client.post(
+            f"/assets/{asset_id}/edit",
+            data={
+                "csrf_token": token,
+                "uid": "REP-1",
+                "name": "Report Shaft renamed",
+                "type": "shaft",
+                "next_maintenance_date": "2025-01-01",
+            },
+            follow_redirects=False,
+        )
+
+        # Plus one maintenance entry and one measurement.
+        client.post(
+            "/entries/new",
+            data={
+                "csrf_token": token,
+                "occurred_date": "2024-08-01",
+                "occurred_time": "08:00",
+                "activity": "Reportprüfung",
+                "operating_hours": "400",
+            },
+            follow_redirects=False,
+        )
+        client.post(
+            "/measurements/new",
+            data={
+                "csrf_token": token,
+                "measured_date": "2024-08-01",
+                "measured_time": "09:00",
+                "parameter": "CSB",
+                "value": "30",
+                "temperature": "16",
+                "operating_hours": "401",
+            },
+            follow_redirects=False,
+        )
+
+        # Change-log events were recorded (created + updated with a diff).
+        with SessionLocal() as db:
+            from sqlalchemy import select as sa_select
+
+            events = list(
+                db.scalars(
+                    sa_select(AssetEvent).where(AssetEvent.asset_uid == "REP-1")
+                ).all()
+            )
+            actions = {ev.action for ev in events}
+            assert AssetEventAction.created in actions
+            assert AssetEventAction.updated in actions
+            updated = next(ev for ev in events if ev.action == AssetEventAction.updated)
+            assert "Report Shaft renamed" in (updated.changes or "")
+
+        # The full chronological report renders as a PDF.
+        r = client.get("/report.pdf")
         assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
         assert r.content[:5] == b"%PDF-"
 
 

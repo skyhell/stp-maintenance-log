@@ -34,7 +34,7 @@ app/
   database.py     SQLAlchemy engine/session
   models/         ORM models
   routers/        HTTP routes (auth, entries, assets, map, admin, account)
-  services/       security, storage, i18n, activities, twofa, pdf_export, backup
+  services/       security, storage, i18n, activities, twofa, backup, report
   templates/      Jinja2 templates (+ HTMX/Alpine)
   static/         CSS, JS, vendored libs (htmx, alpine, leaflet)
   i18n/           de.json, en.json
@@ -59,5 +59,5 @@ tests/            pytest smoke/integration tests
 
 ## Commit messages
 
-Short, imperative summary lines (e.g. "Add PDF export for date range").
+Short, imperative summary lines (e.g. "Add CSV export for date range").
 Reference issues where relevant.

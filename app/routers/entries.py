@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -14,9 +14,7 @@ from app.models.asset import Asset
 from app.models.maintenance import EntryImage, MaintenanceEntry
 from app.models.user import User
 from app.services.activities import get_or_create_activity, list_activities
-from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
 from app.services.maintenance_schedule import refresh_next_maintenance
-from app.services.pdf_export import build_history_pdf
 from app.services.security import get_current_user, verify_csrf
 from app.services.storage import UploadError, delete_upload, save_upload
 from app.services.templating import flash, render
@@ -146,35 +144,6 @@ def history(
         },
         db=db,
         user=user,
-    )
-
-
-@router.get("/export.pdf")
-def export_pdf(
-    request: Request,
-    asset_id: str | None = None,
-    activity_id: str | None = None,
-    q: str | None = None,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    entries, _, _ = _filtered_entries(db, asset_id, activity_id, q, date_from, date_to)
-    lang = normalize_lang(request.cookies.get(LANGUAGE_COOKIE))
-    pdf = build_history_pdf(
-        entries,
-        get_translator(lang),
-        _parse_date(date_from),
-        _parse_date(date_to),
-    )
-    filename = "maintenance-history"
-    if date_from or date_to:
-        filename += f"_{date_from or 'start'}_{date_to or 'end'}"
-    return Response(
-        content=pdf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
     )
 
 

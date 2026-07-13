@@ -5,15 +5,19 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
 from app.database import get_db
-from app.models.asset import OBJECT_TYPES, Asset
+from app.models.asset import OBJECT_TYPES, Asset, AssetType
+from app.models.asset_event import AssetEvent
 from app.models.maintenance import MaintenanceEntry
 from app.models.measurement import Measurement
 from app.models.user import User
+from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
+from app.services.report import build_plant_report
 from app.services.security import get_current_user
 from app.services.templating import render
 
@@ -79,4 +83,45 @@ def dashboard(
         },
         db=db,
         user=user,
+    )
+
+
+@router.get("/report.pdf")
+def plant_report(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Chronological full report: entries, measurements and asset changes."""
+    plant = db.scalar(select(Asset).where(Asset.type == AssetType.plant))
+    entries = list(
+        db.scalars(
+            select(MaintenanceEntry).options(
+                selectinload(MaintenanceEntry.user),
+                selectinload(MaintenanceEntry.activity),
+                selectinload(MaintenanceEntry.asset),
+                selectinload(MaintenanceEntry.images),
+            )
+        ).all()
+    )
+    measurements = list(
+        db.scalars(select(Measurement).options(selectinload(Measurement.user))).all()
+    )
+    events = list(
+        db.scalars(select(AssetEvent).options(selectinload(AssetEvent.user))).all()
+    )
+
+    lang = normalize_lang(request.cookies.get(LANGUAGE_COOKIE))
+    pdf = build_plant_report(
+        plant.name if plant else "—",
+        entries,
+        measurements,
+        events,
+        get_translator(lang),
+    )
+    filename = f"plant-report_{date.today().isoformat()}"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
     )

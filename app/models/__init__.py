@@ -2,6 +2,7 @@
 
 from app.models.activity import Activity
 from app.models.asset import Asset, AssetType
+from app.models.asset_event import AssetEvent, AssetEventAction
 from app.models.maintenance import EntryImage, MaintenanceEntry
 from app.models.measurement import Measurement
 from app.models.pipe import PipeSegment
@@ -10,6 +11,8 @@ from app.models.user import User, UserRole
 __all__ = [
     "Activity",
     "Asset",
+    "AssetEvent",
+    "AssetEventAction",
     "AssetType",
     "EntryImage",
     "MaintenanceEntry",

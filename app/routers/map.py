@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.asset import OBJECT_TYPES, Asset, AssetType
+from app.models.asset_event import AssetEventAction
 from app.models.pipe import PipeSegment
 from app.models.user import User
+from app.services.asset_events import log_asset_event
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import render
 
@@ -195,6 +197,7 @@ def create_object(
         longitude=lon,
     )
     db.add(asset)
+    log_asset_event(db, user.id, asset, AssetEventAction.created)
     db.commit()
     return {
         "ok": True,

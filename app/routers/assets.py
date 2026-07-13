@@ -15,9 +15,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.asset import OBJECT_TYPES, Asset, AssetType
+from app.models.asset_event import AssetEventAction
 from app.models.maintenance import MaintenanceEntry
 from app.models.pipe import PipeSegment
 from app.models.user import User
+from app.services.asset_events import log_asset_event, snapshot
 from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
@@ -159,6 +161,7 @@ def create_asset(
         comment=comment.strip() or None,
     )
     db.add(asset)
+    log_asset_event(db, user.id, asset, AssetEventAction.created)
     db.commit()
     flash(request, "asset.saved")
     return RedirectResponse("/assets", status_code=303)
@@ -223,6 +226,7 @@ def update_asset(
             status_code=400,
         )
 
+    before = snapshot(asset)
     asset.uid = uid
     asset.name = name.strip()
     asset.type = _coerce_object_type(type)
@@ -234,6 +238,7 @@ def update_asset(
     asset.longitude = _parse_float(longitude)
     asset.comment = comment.strip() or None
     refresh_next_maintenance(db, asset.id)
+    log_asset_event(db, user.id, asset, AssetEventAction.updated, before)
     db.commit()
     flash(request, "asset.saved")
     return RedirectResponse("/assets", status_code=303)
@@ -266,6 +271,7 @@ def delete_asset(
                 )
             )
         )
+        log_asset_event(db, user.id, asset, AssetEventAction.deleted)
         db.delete(asset)
         db.commit()
         flash(request, "asset.deleted")

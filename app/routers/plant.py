@@ -11,7 +11,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.asset import Asset, AssetType
+from app.models.asset_event import AssetEventAction
 from app.models.user import User
+from app.services.asset_events import log_asset_event, snapshot
 from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import require_admin, verify_csrf
 from app.services.templating import flash, render
@@ -76,6 +78,7 @@ def update_plant(
 ):
     verify_csrf(request, csrf_token)
     plant = _get_plant(db)
+    before = snapshot(plant)
     plant.name = name.strip() or plant.name
     plant.install_date = _parse_date(install_date)
     plant.next_maintenance_date = _parse_date(next_maintenance_date)
@@ -88,6 +91,7 @@ def update_plant(
     plant.longitude = _parse_float(longitude)
     plant.comment = comment.strip() or None
     refresh_next_maintenance(db, plant.id)
+    log_asset_event(db, user.id, plant, AssetEventAction.updated, before)
     db.commit()
     flash(request, "plant.saved")
     return RedirectResponse("/plant", status_code=303)

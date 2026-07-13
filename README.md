@@ -31,7 +31,8 @@ no external CDN, no API keys.
 - **Two-factor authentication (2FA)** — TOTP compatible with Google
   Authenticator / Authy, QR-code setup and one-time backup codes.
 - **User management** — admins create, edit, deactivate and delete users.
-- **PDF export** — export the history for any date range as a formatted PDF.
+- **Plant report (PDF)** — one chronological report of everything: maintenance
+  entries, measurements and object changes.
 - **Backup & restore** — full ZIP backup (database + images), one-click restore.
 - **Internationalisation** — full German 🇩🇪 and English 🇬🇧, switchable in the UI.
 - **Apple-style UI** — clean, minimal, rounded, with a persistent **dark mode**
@@ -219,7 +220,8 @@ Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container**.
 Dropdown · History mit Filtern (Anlage, Zeitraum, Volltext) · Anlagen­verwaltung
 mit Wartungs-Reminder · Kartenansicht (Leaflet/OpenStreetMap) · GPS-Standort &
 Spracheingabe am Handy · Login mit Rollen · **2FA (TOTP)** mit QR-Code und
-Backup-Codes · Benutzerverwaltung · **PDF-Export** nach Zeitraum ·
+Backup-Codes · Benutzerverwaltung · **Anlagenbericht (PDF)** mit Wartungen,
+Messwerten und Objektänderungen in chronologischer Übersicht ·
 **Backup/Restore** als ZIP · zweisprachig **DE/EN** · **Dark Mode** ·
 responsives Apple-Stil-Design.
 
