@@ -28,6 +28,15 @@
       </select>
     </div>
     <div class="field">
+      <label>{{ t('report.quick') }}</label>
+      <select name="year">
+        <option value="">{{ t('common.all') }}</option>
+        {% for y in years %}
+        <option value="{{ y }}" {% if filters.year == y|string %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
       <label>{{ t('entry.filter_from') }}</label>
       <input type="date" name="date_from" value="{{ filters.date_from }}">
     </div>

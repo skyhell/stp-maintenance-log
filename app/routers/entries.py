@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
@@ -60,10 +60,18 @@ def _combine_dt(raw: str, date_part: str, time_part: str) -> str:
     return f"{date_part}T{time_part}" if time_part else date_part
 
 
+def _data_years(db: Session) -> list[int]:
+    """Years covered by entries, newest first, for the quick select."""
+    first_dt = db.scalar(select(func.min(MaintenanceEntry.occurred_at)))
+    first = first_dt.year if first_dt is not None else date.today().year
+    return list(range(date.today().year, first - 1, -1))
+
+
 def _filtered_entries(
     db: Session,
     asset_id: str | None,
     activity_id: str | None,
+    year: str | None,
     q: str | None,
     date_from: str | None,
     date_to: str | None,
@@ -89,8 +97,12 @@ def _filtered_entries(
         selected_activity = int(activity_id)
         stmt = stmt.where(MaintenanceEntry.activity_id == selected_activity)
 
-    df = _parse_date(date_from)
-    dt_ = _parse_date(date_to)
+    # Quick-select year wins over an explicit from/to range (like the report).
+    if year and year.isdigit():
+        y = int(year)
+        df, dt_ = date(y, 1, 1), date(y, 12, 31)
+    else:
+        df, dt_ = _parse_date(date_from), _parse_date(date_to)
     if df:
         stmt = stmt.where(
             MaintenanceEntry.occurred_at >= datetime.combine(df, time.min, UTC)
@@ -116,6 +128,7 @@ def history(
     request: Request,
     asset_id: str | None = None,
     activity_id: str | None = None,
+    year: str | None = None,
     q: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
@@ -123,7 +136,7 @@ def history(
     user: User = Depends(get_current_user),
 ):
     entries, selected_asset, selected_activity = _filtered_entries(
-        db, asset_id, activity_id, q, date_from, date_to
+        db, asset_id, activity_id, year, q, date_from, date_to
     )
     assets = list(db.scalars(select(Asset).order_by(Asset.name)).all())
 
@@ -134,9 +147,11 @@ def history(
             "entries": entries,
             "assets": assets,
             "activities": list_activities(db),
+            "years": _data_years(db),
             "filters": {
                 "asset_id": selected_asset,
                 "activity_id": selected_activity,
+                "year": year if year and year.isdigit() else "",
                 "q": q or "",
                 "date_from": date_from or "",
                 "date_to": date_to or "",

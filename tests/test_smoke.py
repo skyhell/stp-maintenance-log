@@ -368,6 +368,14 @@ def test_entry_activity_filter():
         assert "only-in-a" in filtered
         assert "only-in-b" not in filtered
 
+        # Quick-select year filters like the report and wins over the range.
+        filtered = client.get("/entries?year=2024").text
+        assert "only-in-a" in filtered and "only-in-b" in filtered
+        filtered = client.get("/entries?year=2023").text
+        assert "only-in-a" not in filtered
+        filtered = client.get("/entries?year=2024&date_from=2025-01-01").text
+        assert "only-in-a" in filtered
+
 
 def test_pipes_crud():
     with _client() as client:
@@ -645,6 +653,7 @@ def test_plant_report_pdf():
         assert r.status_code == 200
         assert r.headers["content-type"] == "application/pdf"
         assert r.content[:5] == b"%PDF-"
+        assert "plant-report_all" in r.headers["content-disposition"]
 
         # Time-range variants: quick-select year, custom range, empty year.
         r = client.get("/plant/report.pdf?year=2024")

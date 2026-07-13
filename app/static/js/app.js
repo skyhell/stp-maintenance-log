@@ -117,6 +117,32 @@
     }
   });
 
+  // ---------- Quick-select year vs. custom date range ----------
+  // The server gives a chosen year precedence over from/to dates. Keep the
+  // form unambiguous: picking a date resets the year select to "all", and
+  // picking a year clears the date fields.
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("form").forEach(function (form) {
+      const yearSel = form.querySelector('select[name="year"]');
+      const from = form.querySelector('input[name="date_from"]');
+      const to = form.querySelector('input[name="date_to"]');
+      if (!yearSel || (!from && !to)) return;
+
+      [from, to].forEach(function (input) {
+        if (!input) return;
+        input.addEventListener("change", function () {
+          if (input.value) yearSel.value = "";
+        });
+      });
+      yearSel.addEventListener("change", function () {
+        if (yearSel.value) {
+          if (from) from.value = "";
+          if (to) to.value = "";
+        }
+      });
+    });
+  });
+
   // ---------- Password visibility (same mechanism as fleetbox) ----------
   // Wrap every password field and inject a show/hide toggle. Done from JS so
   // the button only exists when it can work.

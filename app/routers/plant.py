@@ -163,13 +163,15 @@ def plant_report(
         range_from=df,
         range_to=dt_,
     )
-    filename = f"plant-report_{date.today().isoformat()}"
+    # Filename reflects the chosen range: _all, _<year> or _<from>_<to>.
     if year and year.isdigit():
         filename = f"plant-report_{year}"
     elif df or dt_:
         from_part = df.isoformat() if df else "start"
         to_part = dt_.isoformat() if dt_ else "end"
         filename = f"plant-report_{from_part}_{to_part}"
+    else:
+        filename = "plant-report_all"
     return Response(
         content=pdf,
         media_type="application/pdf",
