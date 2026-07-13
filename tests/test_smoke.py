@@ -485,6 +485,11 @@ def test_measurements_crud_and_filter():
         form_page = client.get("/measurements/new").text
         assert form_page.index('<option value="O2">') < form_page.index('<option value="NH4">')
 
+        # Recent measurements show up on the dashboard with a link to the page.
+        dash = client.get("/").text
+        assert "<strong style=\"color:var(--text)\">NH4</strong>" in dash
+        assert 'href="/measurements"' in dash
+
         # Filter by parameter.
         filtered = client.get("/measurements?parameter=NH4").text
         assert "<strong>NH4</strong>" in filtered

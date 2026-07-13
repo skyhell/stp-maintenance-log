@@ -12,6 +12,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.asset import OBJECT_TYPES, Asset
 from app.models.maintenance import MaintenanceEntry
+from app.models.measurement import Measurement
 from app.models.user import User
 from app.services.security import get_current_user
 from app.services.templating import render
@@ -54,6 +55,12 @@ def dashboard(
         ).all()
     )
 
+    recent_measurements = list(
+        db.scalars(
+            select(Measurement).order_by(Measurement.measured_at.desc()).limit(8)
+        ).all()
+    )
+
     total_assets = (
         db.scalar(select(func.count(Asset.id)).where(Asset.type.in_(OBJECT_TYPES))) or 0
     )
@@ -66,6 +73,7 @@ def dashboard(
             "overdue": overdue,
             "due_soon": due_soon,
             "recent": recent,
+            "recent_measurements": recent_measurements,
             "total_assets": total_assets,
             "total_entries": total_entries,
         },

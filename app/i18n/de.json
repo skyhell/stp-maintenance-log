@@ -49,6 +49,7 @@
   "dashboard.overdue": "Überfällig",
   "dashboard.due_soon": "Bald fällig",
   "dashboard.recent_entries": "Letzte Einträge",
+  "dashboard.recent_measurements": "Letzte Messwerte",
   "dashboard.total_assets": "Objekte gesamt",
   "dashboard.total_entries": "Einträge gesamt",
   "dashboard.no_due": "Keine anstehenden Wartungen. Alles im grünen Bereich.",

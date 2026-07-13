@@ -67,5 +67,25 @@
       <p class="muted">{{ t('entry.no_entries') }}</p>
     {% endif %}
   </div>
+
+  <div class="card">
+    <h2>{{ t('dashboard.recent_measurements') }}</h2>
+    {% if recent_measurements %}
+      {% for mm in recent_measurements %}
+      <div class="entry-item">
+        <div class="entry-meta">
+          <span>{{ mm.measured_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          · <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}
+          {% if mm.temperature is not none %}· 🌡 {{ mm.temperature }} °C{% endif %}
+          {% if mm.operating_hours is not none %}· ⏱ {{ mm.operating_hours }} h{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      <div style="margin-top:12px;"><a href="/measurements" class="btn-ghost btn btn-sm">{{ t('measure.title') }} →</a></div>
+    {% else %}
+      <p class="muted">{{ t('measure.no_data') }}</p>
+      <div style="margin-top:12px;"><a href="/measurements/new" class="btn-ghost btn btn-sm">＋ {{ t('measure.new') }}</a></div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
