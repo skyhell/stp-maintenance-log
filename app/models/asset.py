@@ -39,6 +39,9 @@ class Asset(Base):
 
     install_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     next_maintenance_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    # Recurring maintenance interval; when set, next_maintenance_date is
+    # recomputed automatically from the newest maintenance entry.
+    maintenance_interval_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)

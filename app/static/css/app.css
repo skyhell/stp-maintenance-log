@@ -322,6 +322,7 @@ tbody tr:hover { background: var(--bg-elev-2); }
 #map { height: 65vh; min-height: 420px; border-radius: var(--radius); border: 1px solid var(--border); }
 .map-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
 .map-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); }
+.pipe-line { display: inline-block; width: 18px; border-top: 3px solid #64748b; }
 
 .map-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .map-add-btn {

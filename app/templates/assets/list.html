@@ -40,6 +40,9 @@
           {% if a.next_maintenance_date %}
           {{ a.next_maintenance_date }} {{ m.status_badge(status, t) }}
           {% else %}<span class="muted">—</span>{% endif %}
+          {% if a.maintenance_interval_months %}
+          <span class="muted text-sm">↻ {{ t('asset.interval_short', n=a.maintenance_interval_months) }}</span>
+          {% endif %}
         </td>
         <td>{{ counts.get(a.id, 0) }}</td>
         <td style="text-align:right; white-space:nowrap;">

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.asset import Asset, AssetType
 from app.models.user import User
+from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
 
@@ -65,6 +66,7 @@ def update_plant(
     name: str = Form(...),
     install_date: str = Form(""),
     next_maintenance_date: str = Form(""),
+    maintenance_interval_months: str = Form(""),
     address: str = Form(""),
     latitude: str = Form(""),
     longitude: str = Form(""),
@@ -77,10 +79,15 @@ def update_plant(
     plant.name = name.strip() or plant.name
     plant.install_date = _parse_date(install_date)
     plant.next_maintenance_date = _parse_date(next_maintenance_date)
+    interval = maintenance_interval_months.strip()
+    plant.maintenance_interval_months = (
+        int(interval) if interval.isdigit() and int(interval) > 0 else None
+    )
     plant.address = address.strip() or None
     plant.latitude = _parse_float(latitude)
     plant.longitude = _parse_float(longitude)
     plant.comment = comment.strip() or None
+    refresh_next_maintenance(db, plant.id)
     db.commit()
     flash(request, "plant.saved")
     return RedirectResponse("/plant", status_code=303)

@@ -49,6 +49,14 @@
   </div>
 
   <div class="field">
+    <label for="maintenance_interval_months">{{ t('asset.interval') }}</label>
+    <input type="number" id="maintenance_interval_months" name="maintenance_interval_months"
+           min="1" step="1" style="max-width:140px;"
+           value="{{ asset.maintenance_interval_months if asset and asset.maintenance_interval_months else '' }}">
+    <div class="hint">{{ t('asset.interval_hint') }}</div>
+  </div>
+
+  <div class="field">
     <label for="address">{{ t('asset.address') }}</label>
     <input id="address" name="address" value="{{ asset.address if asset and asset.address else '' }}">
   </div>

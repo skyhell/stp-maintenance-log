@@ -10,13 +10,15 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.asset import OBJECT_TYPES, Asset, AssetType
 from app.models.maintenance import MaintenanceEntry
+from app.models.pipe import PipeSegment
 from app.models.user import User
+from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
 
@@ -46,6 +48,13 @@ def _parse_float(value: str | None) -> float | None:
         return float(value.replace(",", "."))
     except ValueError:
         return None
+
+
+def _parse_interval(value: str | None) -> int | None:
+    if value is None or not value.strip().isdigit():
+        return None
+    months = int(value.strip())
+    return months if months > 0 else None
 
 
 @router.get("")
@@ -111,6 +120,7 @@ def create_asset(
     type: str = Form(...),
     install_date: str = Form(""),
     next_maintenance_date: str = Form(""),
+    maintenance_interval_months: str = Form(""),
     address: str = Form(""),
     latitude: str = Form(""),
     longitude: str = Form(""),
@@ -142,6 +152,7 @@ def create_asset(
         type=_coerce_object_type(type),
         install_date=_parse_date(install_date),
         next_maintenance_date=_parse_date(next_maintenance_date),
+        maintenance_interval_months=_parse_interval(maintenance_interval_months),
         address=address.strip() or None,
         latitude=_parse_float(latitude),
         longitude=_parse_float(longitude),
@@ -185,6 +196,7 @@ def update_asset(
     type: str = Form(...),
     install_date: str = Form(""),
     next_maintenance_date: str = Form(""),
+    maintenance_interval_months: str = Form(""),
     address: str = Form(""),
     latitude: str = Form(""),
     longitude: str = Form(""),
@@ -216,10 +228,12 @@ def update_asset(
     asset.type = _coerce_object_type(type)
     asset.install_date = _parse_date(install_date)
     asset.next_maintenance_date = _parse_date(next_maintenance_date)
+    asset.maintenance_interval_months = _parse_interval(maintenance_interval_months)
     asset.address = address.strip() or None
     asset.latitude = _parse_float(latitude)
     asset.longitude = _parse_float(longitude)
     asset.comment = comment.strip() or None
+    refresh_next_maintenance(db, asset.id)
     db.commit()
     flash(request, "asset.saved")
     return RedirectResponse("/assets", status_code=303)
@@ -243,6 +257,15 @@ def delete_asset(
         # Detach entries from the asset rather than deleting the history.
         for entry in list(asset.entries):
             entry.asset_id = None
+        # Pipe segments make no sense without both endpoints.
+        db.execute(
+            delete(PipeSegment).where(
+                or_(
+                    PipeSegment.from_asset_id == asset_id,
+                    PipeSegment.to_asset_id == asset_id,
+                )
+            )
+        )
         db.delete(asset)
         db.commit()
         flash(request, "asset.deleted")

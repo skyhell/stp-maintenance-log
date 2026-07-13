@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.asset import OBJECT_TYPES, Asset, AssetType
+from app.models.pipe import PipeSegment
 from app.models.user import User
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import render
@@ -82,6 +83,80 @@ def assets_json(
             for a in assets
         ]
     }
+
+
+@router.get("/api/pipes")
+def pipes_json(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Pipe segments (sewer lines) between assets, for the map."""
+    pipes = db.scalars(select(PipeSegment)).all()
+    return {
+        "pipes": [
+            {"id": p.id, "from_id": p.from_asset_id, "to_id": p.to_asset_id}
+            for p in pipes
+        ]
+    }
+
+
+@router.post("/api/pipes")
+def create_pipe(
+    request: Request,
+    csrf_token: str = Form(...),
+    from_asset_id: str = Form(...),
+    to_asset_id: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Connect two assets with a pipe segment (drawn on the map)."""
+    verify_csrf(request, csrf_token)
+
+    if not (from_asset_id.isdigit() and to_asset_id.isdigit()):
+        return JSONResponse({"ok": False, "error": "assets"}, status_code=400)
+    from_id, to_id = int(from_asset_id), int(to_asset_id)
+    if from_id == to_id:
+        return JSONResponse({"ok": False, "error": "assets"}, status_code=400)
+    if db.get(Asset, from_id) is None or db.get(Asset, to_id) is None:
+        return JSONResponse({"ok": False, "error": "assets"}, status_code=400)
+
+    # A segment between the same two assets (either direction) exists only once.
+    existing = db.scalar(
+        select(PipeSegment).where(
+            or_(
+                (PipeSegment.from_asset_id == from_id)
+                & (PipeSegment.to_asset_id == to_id),
+                (PipeSegment.from_asset_id == to_id)
+                & (PipeSegment.to_asset_id == from_id),
+            )
+        )
+    )
+    if existing:
+        return JSONResponse({"ok": False, "error": "exists"}, status_code=400)
+
+    pipe = PipeSegment(from_asset_id=from_id, to_asset_id=to_id)
+    db.add(pipe)
+    db.commit()
+    return {
+        "ok": True,
+        "pipe": {"id": pipe.id, "from_id": pipe.from_asset_id, "to_id": pipe.to_asset_id},
+    }
+
+
+@router.post("/api/pipes/{pipe_id}/delete")
+def delete_pipe(
+    pipe_id: int,
+    request: Request,
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    verify_csrf(request, csrf_token)
+    pipe = db.get(PipeSegment, pipe_id)
+    if pipe:
+        db.delete(pipe)
+        db.commit()
+    return {"ok": True}
 
 
 @router.post("/api/objects")

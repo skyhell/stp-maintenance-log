@@ -9,7 +9,8 @@
 <div class="map-toolbar">
   <button type="button" class="map-add-btn" data-type="shaft">{{ t('map.add_shaft') }}</button>
   <button type="button" class="map-add-btn" data-type="connection">{{ t('map.add_connection') }}</button>
-  <span class="map-place-hint" id="placeHint">{{ t('map.place_hint') }}</span>
+  <button type="button" class="map-add-btn" data-type="connect">🔗 {{ t('map.add_pipe') }}</button>
+  <span class="map-place-hint" id="placeHint"></span>
 </div>
 
 <div id="map"></div>
@@ -19,6 +20,7 @@
   <span><span class="dot dot-plant"></span> {{ t('asset.type.plant') }}</span>
   <span><span class="dot dot-shaft"></span> {{ t('asset.type.shaft') }}</span>
   <span><span class="dot dot-connection"></span> {{ t('asset.type.connection') }}</span>
+  <span><span class="pipe-line"></span> {{ t('map.pipe') }}</span>
 </div>
 {% endblock %}
 {% block scripts %}
@@ -26,6 +28,7 @@
 <script>
 (function () {
   var colors = { plant: "#0071e3", shaft: "#ff9500", connection: "#34c759" };
+  var PIPE_COLOR = "#64748b";
   var typeLabels = {
     plant: {{ t('asset.type.plant')|tojson }},
     shaft: {{ t('asset.type.shaft')|tojson }},
@@ -37,9 +40,15 @@
     uid: {{ t('map.obj_uid')|tojson }},
     save: {{ t('common.save')|tojson }},
     cancel: {{ t('common.cancel')|tojson }},
+    delete: {{ t('common.delete')|tojson }},
     nameRequired: {{ t('map.name_required')|tojson }},
     uidTaken: {{ t('map.uid_taken')|tojson }},
-    error: {{ t('map.create_error')|tojson }}
+    error: {{ t('map.create_error')|tojson }},
+    placeHint: {{ t('map.place_hint')|tojson }},
+    connectHint: {{ t('map.connect_hint')|tojson }},
+    pipe: {{ t('map.pipe')|tojson }},
+    pipeExists: {{ t('map.pipe_exists')|tojson }},
+    pipeError: {{ t('map.pipe_error')|tojson }}
   };
   var CSRF = {{ csrf_token|tojson }};
 
@@ -49,15 +58,14 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
+  var assetsById = {};
+  var markersById = {};
+
   function editHref(a) {
     return a.type === "plant" ? "/plant" : "/assets/" + a.id + "/edit";
   }
 
-  function addAssetMarker(a) {
-    var marker = L.circleMarker([a.lat, a.lon], {
-      radius: 9, color: "#fff", weight: 2,
-      fillColor: colors[a.type] || "#8e8e93", fillOpacity: 1
-    }).addTo(map);
+  function assetPopupHtml(a) {
     var html =
       '<strong>' + escapeHtml(a.name) + '</strong><br>' +
       '<span style="color:#888">' + escapeHtml(a.uid) + ' · ' +
@@ -65,8 +73,58 @@
     if (a.address) html += '<br>' + escapeHtml(a.address);
     if (a.next_maintenance) html += '<br>' + L10N.next + ': ' + a.next_maintenance;
     html += '<br><a href="' + editHref(a) + '">✎</a>';
-    marker.bindPopup(html);
+    return html;
+  }
+
+  function addAssetMarker(a) {
+    assetsById[a.id] = a;
+    var marker = L.circleMarker([a.lat, a.lon], {
+      radius: 9, color: "#fff", weight: 2,
+      fillColor: colors[a.type] || "#8e8e93", fillOpacity: 1
+    }).addTo(map);
+    // Popup is opened manually so connect mode can claim marker clicks.
+    marker.on("click", function () {
+      if (placing === "connect") { handleConnectClick(a, marker); return; }
+      L.popup().setLatLng([a.lat, a.lon]).setContent(assetPopupHtml(a)).openOn(map);
+    });
+    markersById[a.id] = marker;
     return marker;
+  }
+
+  // ---------- Pipes (sewer lines between assets) ----------
+  function pipePopup(pipe, line) {
+    var from = assetsById[pipe.from_id] || {};
+    var to = assetsById[pipe.to_id] || {};
+    var el = document.createElement("div");
+    el.innerHTML =
+      '<strong>' + L10N.pipe + '</strong><br>' +
+      escapeHtml(from.name || "?") + ' → ' + escapeHtml(to.name || "?") + '<br>';
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-sm";
+    btn.style.cssText = "margin-top:6px;color:#fff;background:var(--danger,#d33);border:0;";
+    btn.textContent = L10N.delete;
+    btn.addEventListener("click", function () {
+      var fd = new FormData();
+      fd.append("csrf_token", CSRF);
+      fetch("/api/pipes/" + pipe.id + "/delete", { method: "POST", body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.ok) { map.removeLayer(line); map.closePopup(); } });
+    });
+    el.appendChild(btn);
+    return el;
+  }
+
+  function drawPipe(pipe) {
+    var from = assetsById[pipe.from_id];
+    var to = assetsById[pipe.to_id];
+    if (!from || !to) return null;
+    var line = L.polyline(
+      [[from.lat, from.lon], [to.lat, to.lon]],
+      { color: PIPE_COLOR, weight: 4, opacity: 0.75 }
+    ).addTo(map);
+    line.bindPopup(function () { return pipePopup(pipe, line); });
+    return line;
   }
 
   fetch("/api/assets")
@@ -79,20 +137,35 @@
       });
       if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
       setTimeout(function () { map.invalidateSize(); }, 200);
+      return fetch("/api/pipes");
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      data.pipes.forEach(drawPipe);
     });
 
   window.addEventListener("load", function () { map.invalidateSize(); });
 
-  // ---------- Placing new objects by clicking the map ----------
-  var placing = null;
+  // ---------- Toolbar modes: place new objects / connect pipes ----------
+  var placing = null;      // 'shaft' | 'connection' | 'connect' | null
   var tempMarker = null;
+  var connectFrom = null;  // asset selected as the first pipe endpoint
   var hint = document.getElementById("placeHint");
+
+  function resetConnectSelection() {
+    if (connectFrom && markersById[connectFrom.id]) {
+      markersById[connectFrom.id].setStyle({ color: "#fff", weight: 2 });
+    }
+    connectFrom = null;
+  }
 
   function setPlacing(type, btn) {
     placing = type;
+    resetConnectSelection();
     document.querySelectorAll(".map-add-btn").forEach(function (b) {
       b.classList.toggle("active", b === btn && type !== null);
     });
+    hint.textContent = type === "connect" ? L10N.connectHint : L10N.placeHint;
     hint.style.display = type ? "inline" : "none";
     map.getContainer().style.cursor = type ? "crosshair" : "";
   }
@@ -105,9 +178,35 @@
   });
 
   map.on("click", function (e) {
-    if (!placing) return;
+    if (!placing || placing === "connect") return;
     openCreatePopup(e.latlng.lat, e.latlng.lng, placing);
   });
+
+  function handleConnectClick(asset, marker) {
+    map.closePopup();
+    if (!connectFrom) {
+      connectFrom = asset;
+      marker.setStyle({ color: PIPE_COLOR, weight: 5 });
+      return;
+    }
+    if (connectFrom.id === asset.id) { resetConnectSelection(); return; }
+
+    var fd = new FormData();
+    fd.append("csrf_token", CSRF);
+    fd.append("from_asset_id", connectFrom.id);
+    fd.append("to_asset_id", asset.id);
+    fetch("/api/pipes", { method: "POST", body: fd })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        resetConnectSelection();
+        if (res.j && res.j.ok) {
+          drawPipe(res.j.pipe);
+        } else {
+          alert(res.j && res.j.error === "exists" ? L10N.pipeExists : L10N.pipeError);
+        }
+      })
+      .catch(function () { resetConnectSelection(); alert(L10N.pipeError); });
+  }
 
   function openCreatePopup(lat, lon, type) {
     if (tempMarker) map.removeLayer(tempMarker);
@@ -159,7 +258,7 @@
         .then(function (res) {
           if (res.j && res.j.ok) {
             cleanup();
-            addAssetMarker(res.j.asset).openPopup();
+            addAssetMarker(res.j.asset);
             setPlacing(null, null);
           } else {
             err.textContent = (res.j && res.j.error === "uid_taken") ? L10N.uidTaken : L10N.error;

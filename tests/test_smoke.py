@@ -303,6 +303,137 @@ def test_backup_and_restore():
         assert "BAK-2" not in uids
 
 
+def test_maintenance_interval_auto_bump():
+    with _client() as client:
+        _login(client)
+
+        # Asset with a 6-month interval and a manually set (old) next date.
+        token = _csrf(client, "/assets/new")
+        client.post(
+            "/assets/new",
+            data={
+                "csrf_token": token,
+                "uid": "INT-1",
+                "name": "Interval Shaft",
+                "type": "shaft",
+                "maintenance_interval_months": "6",
+                "next_maintenance_date": "2020-01-01",
+                "latitude": "48.20",
+                "longitude": "16.30",
+            },
+            follow_redirects=False,
+        )
+        asset = next(
+            a for a in client.get("/api/assets").json()["assets"] if a["uid"] == "INT-1"
+        )
+
+        # Logging an entry bumps the next maintenance date automatically.
+        token = _csrf(client, "/entries/new")
+        client.post(
+            "/entries/new",
+            data={
+                "csrf_token": token,
+                "occurred_at": "2024-05-15T10:00",
+                "asset_id": str(asset["id"]),
+                "activity": "Spülung",
+            },
+            follow_redirects=False,
+        )
+        refreshed = next(
+            a for a in client.get("/api/assets").json()["assets"] if a["uid"] == "INT-1"
+        )
+        assert refreshed["next_maintenance"] == "2024-11-15"
+
+
+def test_entry_activity_filter():
+    import re
+
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/entries/new")
+        for activity, desc in [("Filter-A", "only-in-a"), ("Filter-B", "only-in-b")]:
+            client.post(
+                "/entries/new",
+                data={
+                    "csrf_token": token,
+                    "occurred_at": "2024-06-01T08:00",
+                    "activity": activity,
+                    "description": desc,
+                },
+                follow_redirects=False,
+            )
+
+        # Find the activity id via the filter dropdown on the unfiltered page.
+        page = client.get("/entries").text
+        m = re.search(r'value="(\d+)"\s*>Filter-A<', page)
+        assert m, "activity option not rendered"
+        filtered = client.get(f"/entries?activity_id={m.group(1)}").text
+        assert "only-in-a" in filtered
+        assert "only-in-b" not in filtered
+
+
+def test_pipes_crud():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/assets/new")
+
+        ids = []
+        for uid in ("P-1", "P-2"):
+            r = client.post(
+                "/api/objects",
+                data={
+                    "csrf_token": token,
+                    "name": uid,
+                    "uid": uid,
+                    "type": "shaft",
+                    "latitude": "48.21",
+                    "longitude": "16.37",
+                },
+            )
+            ids.append(r.json()["asset"]["id"])
+
+        # Create a pipe between the two shafts.
+        r = client.post(
+            "/api/pipes",
+            data={"csrf_token": token, "from_asset_id": ids[0], "to_asset_id": ids[1]},
+        )
+        assert r.status_code == 200
+        pipe = r.json()["pipe"]
+        assert {pipe["from_id"], pipe["to_id"]} == set(ids)
+        assert any(p["id"] == pipe["id"] for p in client.get("/api/pipes").json()["pipes"])
+
+        # Duplicates (either direction) are rejected.
+        r = client.post(
+            "/api/pipes",
+            data={"csrf_token": token, "from_asset_id": ids[1], "to_asset_id": ids[0]},
+        )
+        assert r.status_code == 400
+        assert r.json()["error"] == "exists"
+
+        # Self-loops are rejected.
+        r = client.post(
+            "/api/pipes",
+            data={"csrf_token": token, "from_asset_id": ids[0], "to_asset_id": ids[0]},
+        )
+        assert r.status_code == 400
+
+        # Deleting a pipe removes it.
+        r = client.post(f"/api/pipes/{pipe['id']}/delete", data={"csrf_token": token})
+        assert r.json()["ok"] is True
+        assert not any(
+            p["id"] == pipe["id"] for p in client.get("/api/pipes").json()["pipes"]
+        )
+
+        # Deleting an endpoint asset removes its pipes too.
+        r = client.post(
+            "/api/pipes",
+            data={"csrf_token": token, "from_asset_id": ids[0], "to_asset_id": ids[1]},
+        )
+        assert r.status_code == 200
+        client.post(f"/assets/{ids[0]}/delete", data={"csrf_token": token})
+        assert client.get("/api/pipes").json()["pipes"] == []
+
+
 def test_2fa_enable_and_login():
     import re
 

@@ -15,6 +15,7 @@ from app.models.maintenance import EntryImage, MaintenanceEntry
 from app.models.user import User
 from app.services.activities import get_or_create_activity, list_activities
 from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
+from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.pdf_export import build_history_pdf
 from app.services.security import get_current_user, verify_csrf
 from app.services.storage import UploadError, delete_upload, save_upload
@@ -46,10 +47,11 @@ def _parse_date(value: str | None) -> date | None:
 def _filtered_entries(
     db: Session,
     asset_id: str | None,
+    activity_id: str | None,
     q: str | None,
     date_from: str | None,
     date_to: str | None,
-) -> tuple[list[MaintenanceEntry], int | None]:
+) -> tuple[list[MaintenanceEntry], int | None, int | None]:
     stmt = (
         select(MaintenanceEntry)
         .options(
@@ -65,6 +67,11 @@ def _filtered_entries(
     if asset_id and asset_id.isdigit():
         selected_asset = int(asset_id)
         stmt = stmt.where(MaintenanceEntry.asset_id == selected_asset)
+
+    selected_activity = None
+    if activity_id and activity_id.isdigit():
+        selected_activity = int(activity_id)
+        stmt = stmt.where(MaintenanceEntry.activity_id == selected_activity)
 
     df = _parse_date(date_from)
     dt_ = _parse_date(date_to)
@@ -85,20 +92,23 @@ def _filtered_entries(
                 MaintenanceEntry.comment.ilike(like),
             )
         )
-    return list(db.scalars(stmt).all()), selected_asset
+    return list(db.scalars(stmt).all()), selected_asset, selected_activity
 
 
 @router.get("")
 def history(
     request: Request,
     asset_id: str | None = None,
+    activity_id: str | None = None,
     q: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    entries, selected_asset = _filtered_entries(db, asset_id, q, date_from, date_to)
+    entries, selected_asset, selected_activity = _filtered_entries(
+        db, asset_id, activity_id, q, date_from, date_to
+    )
     assets = list(db.scalars(select(Asset).order_by(Asset.name)).all())
 
     return render(
@@ -107,8 +117,10 @@ def history(
         {
             "entries": entries,
             "assets": assets,
+            "activities": list_activities(db),
             "filters": {
                 "asset_id": selected_asset,
+                "activity_id": selected_activity,
                 "q": q or "",
                 "date_from": date_from or "",
                 "date_to": date_to or "",
@@ -123,13 +135,14 @@ def history(
 def export_pdf(
     request: Request,
     asset_id: str | None = None,
+    activity_id: str | None = None,
     q: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    entries, _ = _filtered_entries(db, asset_id, q, date_from, date_to)
+    entries, _, _ = _filtered_entries(db, asset_id, activity_id, q, date_from, date_to)
     lang = normalize_lang(request.cookies.get(LANGUAGE_COOKIE))
     pdf = build_history_pdf(
         entries,
@@ -208,6 +221,7 @@ async def create_entry(
     db.flush()
     if images:
         await _handle_images(db, entry, images)
+    refresh_next_maintenance(db, entry.asset_id)
     db.commit()
     flash(request, "entry.saved")
     return RedirectResponse("/entries", status_code=303)
@@ -258,6 +272,7 @@ async def update_entry(
         raise HTTPException(status_code=404, detail="Entry not found")
 
     activity_obj = get_or_create_activity(db, activity)
+    old_asset_id = entry.asset_id
     entry.occurred_at = _parse_dt(occurred_at) or entry.occurred_at
     entry.asset_id = int(asset_id) if asset_id.isdigit() else None
     entry.activity_id = activity_obj.id if activity_obj else None
@@ -266,6 +281,10 @@ async def update_entry(
     entry.comment = comment.strip() or None
     if images:
         await _handle_images(db, entry, images)
+    db.flush()
+    refresh_next_maintenance(db, entry.asset_id)
+    if old_asset_id != entry.asset_id:
+        refresh_next_maintenance(db, old_asset_id)
     db.commit()
     flash(request, "entry.saved")
     return RedirectResponse("/entries", status_code=303)
@@ -282,9 +301,12 @@ def delete_entry(
     verify_csrf(request, csrf_token)
     entry = db.get(MaintenanceEntry, entry_id)
     if entry:
+        asset_id = entry.asset_id
         for img in entry.images:
             delete_upload(img.filename)
         db.delete(entry)
+        db.flush()
+        refresh_next_maintenance(db, asset_id)
         db.commit()
         flash(request, "entry.deleted")
     return RedirectResponse("/entries", status_code=303)

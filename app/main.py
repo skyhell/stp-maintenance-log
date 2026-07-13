@@ -57,6 +57,22 @@ def _migrate_asset_types() -> None:
         conn.execute(text("UPDATE assets SET type='shaft' WHERE type='channel'"))
 
 
+def _migrate_schema() -> None:
+    """Add columns that create_all cannot add to pre-existing tables."""
+    from sqlalchemy import text
+
+    from app.database import engine, is_sqlite
+
+    if not is_sqlite():
+        return
+    with engine.begin() as conn:
+        cols = {row[1] for row in conn.execute(text("PRAGMA table_info(assets)"))}
+        if "maintenance_interval_months" not in cols:
+            conn.execute(
+                text("ALTER TABLE assets ADD COLUMN maintenance_interval_months INTEGER")
+            )
+
+
 def _bootstrap_plant() -> None:
     """Ensure the single treatment-plant ('Anlage') record exists."""
     from app.models.asset import Asset, AssetType
@@ -81,6 +97,7 @@ def _bootstrap_plant() -> None:
 async def lifespan(app: FastAPI):
     logger.info("Initializing database ...")
     init_db()
+    _migrate_schema()
     _migrate_asset_types()
     _bootstrap_admin()
     _bootstrap_plant()
