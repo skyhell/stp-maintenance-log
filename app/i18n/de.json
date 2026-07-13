@@ -50,6 +50,7 @@
   "dashboard.due_overview": "Fällige Wartungen",
   "dashboard.overdue": "Überfällig",
   "dashboard.due_soon": "Bald fällig",
+  "dashboard.new_entry": "Neuer Wartungseintrag",
   "dashboard.recent_entries": "Letzte Einträge",
   "dashboard.recent_measurements": "Letzte Messwerte",
   "dashboard.total_assets": "Objekte gesamt",

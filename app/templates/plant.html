@@ -9,6 +9,33 @@
 </div>
 <p class="muted text-sm" style="margin-top:-8px; margin-bottom:18px;">{{ t('plant.subtitle') }}</p>
 
+<form method="get" action="/plant/report.pdf" class="card" style="margin-bottom:16px;">
+  <h2>{{ t('report.button') }}</h2>
+  <div class="field-row" style="align-items:flex-end;">
+    <div class="field">
+      <label>{{ t('report.quick') }}</label>
+      <select name="year">
+        <option value="">{{ t('common.all') }}</option>
+        {% for y in report_years %}
+        <option value="{{ y }}">{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>{{ t('entry.filter_from') }}</label>
+      <input type="date" name="date_from">
+    </div>
+    <div class="field">
+      <label>{{ t('entry.filter_to') }}</label>
+      <input type="date" name="date_to">
+    </div>
+    <div class="field">
+      <button class="btn btn-secondary" type="submit">⬇ {{ t('report.button') }}</button>
+    </div>
+  </div>
+  <div class="hint">{{ t('report.range_hint') }}</div>
+</form>
+
 <form method="post" action="/plant" class="card">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 

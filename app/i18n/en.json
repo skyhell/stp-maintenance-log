@@ -50,6 +50,7 @@
   "dashboard.due_overview": "Due maintenance",
   "dashboard.overdue": "Overdue",
   "dashboard.due_soon": "Due soon",
+  "dashboard.new_entry": "New maintenance entry",
   "dashboard.recent_entries": "Recent entries",
   "dashboard.recent_measurements": "Recent measurements",
   "dashboard.total_assets": "Total objects",

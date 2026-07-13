@@ -61,6 +61,9 @@ def test_login_and_dashboard():
         dash = client.get("/")
         assert dash.status_code == 200
         assert "Dashboard" in dash.text
+        # Quick-action buttons for a new entry and a new measurement.
+        assert 'href="/entries/new"' in dash.text
+        assert 'href="/measurements/new"' in dash.text
 
 
 def _csrf(client: TestClient, path: str) -> str:
@@ -624,18 +627,18 @@ def test_plant_report_pdf():
             assert "Report Shaft renamed" in (updated.changes or "")
 
         # The full chronological report renders as a PDF.
-        r = client.get("/report.pdf")
+        r = client.get("/plant/report.pdf")
         assert r.status_code == 200
         assert r.headers["content-type"] == "application/pdf"
         assert r.content[:5] == b"%PDF-"
 
         # Time-range variants: quick-select year, custom range, empty year.
-        r = client.get("/report.pdf?year=2024")
+        r = client.get("/plant/report.pdf?year=2024")
         assert r.status_code == 200 and r.content[:5] == b"%PDF-"
         assert "plant-report_2024" in r.headers["content-disposition"]
-        r = client.get("/report.pdf?date_from=2024-08-01&date_to=2024-08-31")
+        r = client.get("/plant/report.pdf?date_from=2024-08-01&date_to=2024-08-31")
         assert r.status_code == 200 and r.content[:5] == b"%PDF-"
-        r = client.get("/report.pdf?year=1999")
+        r = client.get("/plant/report.pdf?year=1999")
         assert r.status_code == 200 and r.content[:5] == b"%PDF-"
 
 
@@ -680,6 +683,8 @@ def test_admin_only_pages():
         assert r.status_code == 403
         assert client.get("/admin/users", follow_redirects=False).status_code == 403
         assert client.get("/admin/backup", follow_redirects=False).status_code == 403
+        # The plant report moved onto the admin-only plant page.
+        assert client.get("/plant/report.pdf", follow_redirects=False).status_code == 403
 
 
 def test_2fa_enable_and_login():

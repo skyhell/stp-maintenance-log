@@ -4,34 +4,11 @@
 {% block content %}
 <div class="page-head">
   <h1>{{ t('dashboard.title') }}</h1>
-  <a href="/entries/new" class="btn">＋ {{ t('entry.new') }}</a>
-</div>
-
-<form method="get" action="/report.pdf" class="card" style="margin-bottom:16px;">
-  <div class="field-row" style="align-items:flex-end;">
-    <div class="field">
-      <label>{{ t('report.quick') }}</label>
-      <select name="year">
-        <option value="">{{ t('common.all') }}</option>
-        {% for y in report_years %}
-        <option value="{{ y }}">{{ y }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field">
-      <label>{{ t('entry.filter_from') }}</label>
-      <input type="date" name="date_from">
-    </div>
-    <div class="field">
-      <label>{{ t('entry.filter_to') }}</label>
-      <input type="date" name="date_to">
-    </div>
-    <div class="field">
-      <button class="btn btn-secondary" type="submit">⬇ {{ t('report.button') }}</button>
-    </div>
+  <div class="flex flex-wrap">
+    <a href="/measurements/new" class="btn btn-secondary">＋ {{ t('measure.new') }}</a>
+    <a href="/entries/new" class="btn">＋ {{ t('dashboard.new_entry') }}</a>
   </div>
-  <div class="hint">{{ t('report.range_hint') }}</div>
-</form>
+</div>
 
 <div class="grid grid-3" style="margin-bottom:16px;">
   <div class="stat">
