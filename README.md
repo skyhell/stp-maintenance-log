@@ -17,13 +17,14 @@ no external CDN, no API keys.
   description, notes, comment, mandatory **operating-hours counter** reading
   and **multiple image uploads** per entry.
 - **Measurements** — log process values (e.g. NH4, O2, pH) with value,
-  temperature and operating-hours counter; self-building parameter list and a
-  recent-measurements card on the dashboard.
+  temperature and operating-hours counter; self-building parameter list,
+  per-parameter **trend charts** and a recent-measurements card on the dashboard.
 - **Self-building activity list** — new activities are stored automatically the
   first time you type them; the most recently used ones sort to the top.
-- **History & filters** — newest first, filter by object, activity, full-text
-  search, and a unified **time filter** (quick-select a year / all, or a custom
-  from–to range) on entries and measurements alike.
+- **History & filters** — newest first, **paginated** (25/page), filter by
+  object, activity, full-text search, and a unified **time filter**
+  (quick-select a year / all, or a custom from–to range) on entries and
+  measurements alike. Each list has a filtered **CSV export**.
 - **Object management** — shafts (manholes) and connections plus the single
   plant, each with a unique ID, installation date, next-maintenance reminder,
   **maintenance interval** (next date is computed automatically from the newest
@@ -41,11 +42,14 @@ no external CDN, no API keys.
   password field.
 - **Two-factor authentication (2FA)** — TOTP compatible with Google
   Authenticator / Authy, QR-code setup and one-time backup codes.
+- **Brute-force protection** — login and 2FA attempts are rate-limited per
+  client IP (configurable).
 - **User management** — admins create, edit, deactivate and delete users, with
   password confirmation on every password change.
 - **Plant report (PDF)** — one chronological report of everything (maintenance
   entries, measurements, object changes) with a cover page (plant master data,
-  summary, generation timestamp) and a selectable time range. Admin-only.
+  summary, generation timestamp), a selectable time range and **image
+  thumbnails** for entries. Admin-only.
 - **Backup & restore** — full ZIP backup (database + images), one-click restore.
 - **Internationalisation** — full German 🇩🇪 and English 🇬🇧, switchable in the UI.
 - **Apple-style UI** — clean, minimal, rounded, with a persistent **dark mode**
@@ -191,6 +195,7 @@ All configuration lives in `.env` (see [`.env.example`](.env.example)):
 | `SECURE_COOKIES` | Set `true` behind HTTPS. |
 | `REMINDER_DUE_SOON_DAYS` | Days before a maintenance date counts as "due soon". |
 | `MAX_UPLOAD_MB` | Max size per uploaded image. |
+| `RATE_LIMIT_MAX_ATTEMPTS` / `_WINDOW_SECONDS` | Failed login/2FA attempts per IP before HTTP 429 (default 5 / 300). |
 | `BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD` | Initial admin created on first run. |
 
 ## 🗃️ Data model
@@ -241,17 +246,18 @@ Selbst gehostetes **Kläranlagen-Wartungsbuch** für die Anlage, ihre Schächte
 und Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container**.
 
 **Funktionen:** Wartungseinträge mit Bildern und Betriebsstunden-Zählerstand ·
-**Messwerte** (z. B. NH4) mit Temperatur und Zählerstand · selbstlernende
-Tätigkeiten- und Messungs-Dropdowns · Filter mit Zeitbereich (Jahr/Alles oder
-Von–Bis), Objekt, Tätigkeit und Volltext · Objektverwaltung mit
-**Wartungsintervall** (nächste Wartung wird automatisch berechnet) und
-**Bildern** · **Änderungsprotokoll** für Objekte · Kartenansicht
+**Messwerte** (z. B. NH4) mit Temperatur, Zählerstand und **Verlaufsdiagrammen** ·
+selbstlernende Tätigkeiten- und Messungs-Dropdowns · paginierte Listen mit
+Filter (Zeitbereich, Objekt, Tätigkeit, Volltext) und **CSV-Export** ·
+Objektverwaltung mit **Wartungsintervall** (nächste Wartung wird automatisch
+berechnet) und **Bildern** · **Änderungsprotokoll** für Objekte · Kartenansicht
 (Leaflet/OpenStreetMap) mit **Kanalverlauf** · GPS-Standort & Spracheingabe am
-Handy · Login mit Rollen · **2FA (TOTP)** mit QR-Code und Backup-Codes ·
-Benutzerverwaltung mit Passwort-Bestätigung · **Anlagenbericht (PDF)** mit
-Übersichtsseite, wählbarem Zeitbereich und chronologischer Übersicht über
-Wartungen, Messwerte und Objektänderungen · **Backup/Restore** als ZIP ·
-zweisprachig **DE/EN** · **Dark Mode** · responsives Apple-Stil-Design.
+Handy · Login mit Rollen und **Rate-Limiting** · **2FA (TOTP)** mit QR-Code und
+Backup-Codes · Benutzerverwaltung mit Passwort-Bestätigung · **Anlagenbericht
+(PDF)** mit Übersichtsseite, wählbarem Zeitbereich, Bild-Thumbnails und
+chronologischer Übersicht über Wartungen, Messwerte und Objektänderungen ·
+**Backup/Restore** als ZIP · zweisprachig **DE/EN** · **Dark Mode** ·
+responsives Apple-Stil-Design.
 
 **Installation auf Proxmox:**
 
