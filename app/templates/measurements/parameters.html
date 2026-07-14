@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ t('measure.thresholds') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('measure.thresholds') }}</h1>
+  <a href="/measurements" class="btn btn-secondary">← {{ t('measure.title') }}</a>
+</div>
+
+<p class="muted">{{ t('measure.threshold_hint') }}</p>
+
+<form method="post" action="/measurements/parameters" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="count" value="{{ rows|length }}">
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ t('measure.parameter') }}</th>
+          <th>{{ t('measure.unit') }}</th>
+          <th>{{ t('measure.min') }}</th>
+          <th>{{ t('measure.max') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            <strong>{{ row.name }}</strong>
+            <input type="hidden" name="name_{{ loop.index0 }}" value="{{ row.name }}">
+          </td>
+          <td><input type="text" name="unit_{{ loop.index0 }}" value="{{ row.cfg.unit or '' }}" placeholder="mg/l" style="max-width:120px;"></td>
+          <td><input type="text" inputmode="decimal" name="min_{{ loop.index0 }}" value="{{ row.cfg.min_value if row.cfg and row.cfg.min_value is not none else '' }}" style="max-width:120px;"></td>
+          <td><input type="text" inputmode="decimal" name="max_{{ loop.index0 }}" value="{{ row.cfg.max_value if row.cfg and row.cfg.max_value is not none else '' }}" style="max-width:120px;"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="flex flex-wrap" style="margin-top:12px;">
+    <button class="btn" type="submit">{{ t('common.save') }}</button>
+    <a href="/measurements" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+  </div>
+  {% else %}
+  <div class="empty"><span class="emoji">🧪</span>{{ t('measure.no_data') }}</div>
+  {% endif %}
+</form>
+{% endblock %}

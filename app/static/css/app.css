@@ -239,6 +239,19 @@ textarea { resize: vertical; min-height: 90px; }
 .chart-card { padding: 14px 16px 10px; }
 .chart-title { margin: 0 0 6px; font-size: 0.95rem; }
 
+/* Out-of-range measurement value */
+.measure-warn { color: var(--danger); font-weight: 600; }
+
+/* Nav search box */
+.nav-search { display: flex; }
+.nav-search input {
+  width: 160px; max-width: 40vw; padding: 5px 10px; font-size: 0.85rem;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev);
+  color: var(--text);
+}
+.nav-search input:focus { outline: none; border-color: var(--accent); }
+@media (max-width: 720px) { .nav-search { display: none; } }
+
 /* Pagination */
 .pagination {
   display: flex; align-items: center; gap: 14px;

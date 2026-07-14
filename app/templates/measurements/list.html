@@ -6,6 +6,7 @@
   <h1>{{ t('measure.title') }}</h1>
   <div class="flex flex-wrap">
     <a href="/measurements/charts" class="btn btn-secondary">📈 {{ t('measure.charts') }}</a>
+    <a href="/measurements/parameters" class="btn btn-secondary">⚙ {{ t('measure.thresholds') }}</a>
     <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
   </div>
 </div>
@@ -65,10 +66,15 @@
     </thead>
     <tbody>
       {% for m in measurements %}
+      {% set cfg = configs.get(m.parameter) %}
+      {% set warn = cfg and cfg.out_of_range(m.value) %}
       <tr>
         <td>{{ m.measured_at|dmy_hm }}</td>
         <td><strong>{{ m.parameter }}</strong></td>
-        <td>{{ m.value if m.value is not none else '—' }}</td>
+        <td{% if warn %} class="measure-warn"{% endif %}>
+          {% if m.value is not none %}{{ m.value }}{% if cfg and cfg.unit %} {{ cfg.unit }}{% endif %}{% else %}—{% endif %}
+          {% if warn %}<span class="badge badge-overdue" title="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
+        </td>
         <td>{{ m.temperature if m.temperature is not none else '—' }}</td>
         <td>{{ m.operating_hours if m.operating_hours is not none else '—' }}</td>
         <td>{{ m.user.username if m.user else '—' }}</td>

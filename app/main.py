@@ -17,6 +17,7 @@ from app.database import SessionLocal, init_db
 from app.models.user import User, UserRole
 from app.routers import account, admin, assets, auth, dashboard, entries, measurements, plant
 from app.routers import map as map_router
+from app.routers import search as search_router
 from app.services.security import get_current_user, hash_password
 from app.services.templating import render
 
@@ -151,6 +152,7 @@ app.include_router(measurements.router)
 app.include_router(assets.router)
 app.include_router(plant.router)
 app.include_router(map_router.router)
+app.include_router(search_router.router)
 app.include_router(account.router)
 app.include_router(admin.router)
 

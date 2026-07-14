@@ -5,6 +5,7 @@ from app.models.asset import Asset, AssetImage, AssetType
 from app.models.asset_event import AssetEvent, AssetEventAction
 from app.models.maintenance import EntryImage, MaintenanceEntry
 from app.models.measurement import Measurement
+from app.models.measurement_parameter import MeasurementParameter
 from app.models.pipe import PipeSegment
 from app.models.user import User, UserRole
 
@@ -18,6 +19,7 @@ __all__ = [
     "EntryImage",
     "MaintenanceEntry",
     "Measurement",
+    "MeasurementParameter",
     "PipeSegment",
     "User",
     "UserRole",

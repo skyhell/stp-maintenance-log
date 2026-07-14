@@ -946,6 +946,102 @@ def test_login_rate_limit():
         _login_limiter.reset_all()
 
 
+def test_measurement_thresholds():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/measurements/new")
+        for i, val in enumerate(("100.0", "5.0")):
+            client.post(
+                "/measurements/new",
+                data={
+                    "csrf_token": token,
+                    "measured_date": f"2024-12-0{i + 1}",
+                    "measured_time": "09:00",
+                    "parameter": "THRESH",
+                    "value": val,
+                    "temperature": "10",
+                    "operating_hours": "1",
+                },
+                follow_redirects=False,
+            )
+        # Configure a warning band [0, 10] with a unit.
+        token = _csrf(client, "/measurements/parameters")
+        r = client.post(
+            "/measurements/parameters",
+            data={
+                "csrf_token": token,
+                "count": "1",
+                "name_0": "THRESH",
+                "unit_0": "mg/l",
+                "min_0": "0",
+                "max_0": "10",
+            },
+            follow_redirects=False,
+        )
+        assert r.status_code == 303
+
+        # The out-of-range value (100) is flagged in the list.
+        page = client.get("/measurements?parameter=THRESH").text
+        assert "measure-warn" in page
+        assert "mg/l" in page  # unit shown
+
+        # The chart draws the dashed threshold reference line.
+        chart = client.get("/measurements/charts?parameter=THRESH").text
+        assert "stroke-dasharray" in chart
+
+
+def test_global_search():
+    with _client() as client:
+        _login(client)
+
+        # An asset, an entry and a measurement each carrying a unique token.
+        token = _csrf(client, "/assets/new")
+        client.post(
+            "/assets/new",
+            data={
+                "csrf_token": token,
+                "uid": "SRCH-1",
+                "name": "Zephyrqux Shaft",
+                "type": "shaft",
+            },
+            follow_redirects=False,
+        )
+        token = _csrf(client, "/entries/new")
+        client.post(
+            "/entries/new",
+            data={
+                "csrf_token": token,
+                "occurred_at": "2024-06-01T10:00",
+                "activity": "Inspection",
+                "description": "Zephyrqux reading noted",
+                "operating_hours": "10",
+            },
+            follow_redirects=False,
+        )
+        token = _csrf(client, "/measurements/new")
+        client.post(
+            "/measurements/new",
+            data={
+                "csrf_token": token,
+                "measured_date": "2024-06-02",
+                "measured_time": "09:00",
+                "parameter": "ZEPHYRQUX",
+                "value": "1",
+                "temperature": "10",
+                "operating_hours": "1",
+            },
+            follow_redirects=False,
+        )
+
+        page = client.get("/search?q=Zephyrqux").text
+        assert "Zephyrqux Shaft" in page  # object match
+        assert "Zephyrqux reading noted" in page  # entry match
+        assert "ZEPHYRQUX" in page  # measurement parameter match
+
+        # An empty query renders the page without results.
+        assert client.get("/search").status_code == 200
+
+
 def test_2fa_enable_and_login():
     import re
 

@@ -75,10 +75,15 @@
     <h2>{{ t('dashboard.recent_measurements') }}</h2>
     {% if recent_measurements %}
       {% for mm in recent_measurements %}
+      {% set cfg = configs.get(mm.parameter) %}
+      {% set warn = cfg and cfg.out_of_range(mm.value) %}
       <div class="entry-item">
         <div class="entry-meta">
           <span>{{ mm.measured_at|dmy_hm }}</span>
-          <span>· <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}</span>
+          <span>· <strong style="color:var(--text)">{{ mm.parameter }}</strong>:
+            <span{% if warn %} class="measure-warn"{% endif %}>{{ mm.value }}{% if cfg and cfg.unit %} {{ cfg.unit }}{% endif %}</span>
+            {% if warn %}<span title="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
+          </span>
           {% if mm.temperature is not none %}<span>· 🌡 {{ mm.temperature }} °C</span>{% endif %}
           {% if mm.operating_hours is not none %}<span>· ⏱ {{ mm.operating_hours }} h</span>{% endif %}
         </div>

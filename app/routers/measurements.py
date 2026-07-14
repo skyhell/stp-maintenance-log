@@ -13,9 +13,11 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.models.measurement import Measurement
+from app.models.measurement_parameter import MeasurementParameter
 from app.models.user import User
 from app.services.charts import line_chart_svg
 from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
+from app.services.measurements import parameter_config_map
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
 
@@ -111,9 +113,12 @@ def _filtered_measurements(
 
 
 def _build_charts(
-    measurements: list[Measurement], param_order: list[str]
+    measurements: list[Measurement],
+    param_order: list[str],
+    configs: dict[str, MeasurementParameter] | None = None,
 ) -> list[tuple[str, str]]:
     """One trend chart per parameter (most recently used first)."""
+    configs = configs or {}
     charts = []
     for param in param_order:
         points = sorted(
@@ -122,7 +127,19 @@ def _build_charts(
             if m.parameter == param and m.value is not None
         )
         if len(points) >= 2:
-            charts.append((param, line_chart_svg(points, param)))
+            cfg = configs.get(param)
+            charts.append(
+                (
+                    param,
+                    line_chart_svg(
+                        points,
+                        param,
+                        unit=cfg.unit if cfg else None,
+                        lo=cfg.min_value if cfg else None,
+                        hi=cfg.max_value if cfg else None,
+                    ),
+                )
+            )
         if len(charts) >= MAX_CHARTS:
             break
     return charts
@@ -155,6 +172,7 @@ def list_measurements(
         {
             "measurements": page_items,
             "parameters": parameters,
+            "configs": parameter_config_map(db),
             "years": _data_years(db),
             "page": page,
             "pages": pages,
@@ -186,7 +204,7 @@ def measurement_charts(
     parameters = _parameters(db)
     # When a single parameter is selected, only chart that one.
     order = [parameter] if parameter else parameters
-    charts = _build_charts(measurements, order)
+    charts = _build_charts(measurements, order, parameter_config_map(db))
 
     return render(
         request,
@@ -205,6 +223,57 @@ def measurement_charts(
         db=db,
         user=user,
     )
+
+
+@router.get("/parameters")
+def parameters_config(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    names = _parameters(db)
+    cfgs = parameter_config_map(db)
+    rows = [{"name": n, "cfg": cfgs.get(n)} for n in names]
+    return render(
+        request,
+        "measurements/parameters.html",
+        {"rows": rows},
+        db=db,
+        user=user,
+    )
+
+
+@router.post("/parameters")
+async def save_parameters(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    form = await request.form()
+    verify_csrf(request, form.get("csrf_token", ""))
+    cfgs = parameter_config_map(db)
+    count = int(form.get("count") or 0)
+    for i in range(count):
+        name = (form.get(f"name_{i}") or "").strip()
+        if not name:
+            continue
+        unit = (form.get(f"unit_{i}") or "").strip()
+        lo = _parse_float(form.get(f"min_{i}"))
+        hi = _parse_float(form.get(f"max_{i}"))
+        cfg = cfgs.get(name)
+        if not unit and lo is None and hi is None:
+            if cfg:
+                db.delete(cfg)
+            continue
+        if not cfg:
+            cfg = MeasurementParameter(name=name)
+            db.add(cfg)
+        cfg.unit = unit or None
+        cfg.min_value = lo
+        cfg.max_value = hi
+    db.commit()
+    flash(request, "measure.thresholds_saved")
+    return RedirectResponse("/measurements/parameters", status_code=303)
 
 
 @router.get("/export.csv")

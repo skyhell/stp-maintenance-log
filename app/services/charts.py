@@ -25,18 +25,36 @@ def _fmt_num(v: float) -> str:
     return s or "0"
 
 
-def line_chart_svg(points: list[tuple[datetime, float]], label: str) -> str:
-    """Render a single-series line chart; expects >= 2 points sorted by time."""
+def line_chart_svg(
+    points: list[tuple[datetime, float]],
+    label: str,
+    unit: str | None = None,
+    lo: float | None = None,
+    hi: float | None = None,
+) -> str:
+    """Render a single-series line chart; expects >= 2 points sorted by time.
+
+    ``unit`` is shown on the y-axis; ``lo``/``hi`` draw dashed warning-threshold
+    reference lines and any point outside [lo, hi] is coloured as a breach.
+    """
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]
 
-    y_min, y_max = min(ys), max(ys)
+    # Include thresholds in the y-domain so their reference lines are visible.
+    domain = list(ys)
+    for ref in (lo, hi):
+        if ref is not None:
+            domain.append(ref)
+    y_min, y_max = min(domain), max(domain)
     if y_min == y_max:  # flat series: give the line room
         y_min -= 1.0
         y_max += 1.0
     pad = (y_max - y_min) * 0.1
     y_min -= pad
     y_max += pad
+
+    def _breach(v: float) -> bool:
+        return (lo is not None and v < lo) or (hi is not None and v > hi)
 
     t0, t1 = xs[0], xs[-1]
     span = (t1 - t0).total_seconds() or 1.0
@@ -67,6 +85,28 @@ def line_chart_svg(points: list[tuple[datetime, float]], label: str) -> str:
             f'fill="var(--text-muted)" font-size="10">{_fmt_num(v)}</text>'
         )
 
+    # Unit label in the top-left corner of the y-axis.
+    if unit:
+        parts.append(
+            f'<text x="4" y="{_M_TOP - 2:.1f}" text-anchor="start" '
+            f'fill="var(--text-muted)" font-size="10">{_esc(unit)}</text>'
+        )
+
+    # Dashed warning-threshold reference lines.
+    for ref, name in ((lo, "min"), (hi, "max")):
+        if ref is None:
+            continue
+        y = sy(ref)
+        parts.append(
+            f'<line x1="{_M_LEFT}" y1="{y:.1f}" x2="{_W - _M_RIGHT}" y2="{y:.1f}" '
+            f'stroke="var(--danger)" stroke-width="1" stroke-dasharray="4 3" '
+            f'opacity="0.7"/>'
+        )
+        parts.append(
+            f'<text x="{_W - _M_RIGHT}" y="{y - 3:.1f}" text-anchor="end" '
+            f'fill="var(--danger)" font-size="9">{name} {_fmt_num(ref)}</text>'
+        )
+
     # X labels: first and last date.
     for t, anchor in ((t0, "start"), (t1, "end")):
         x = sx(t)
@@ -82,21 +122,24 @@ def line_chart_svg(points: list[tuple[datetime, float]], label: str) -> str:
         f'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
     )
 
-    # Points with native tooltips (large invisible hit target behind each dot).
+    # Points with native tooltips (large invisible hit target behind each dot);
+    # points outside the threshold band are coloured as a breach.
     for t, v in points:
         x, y = sx(t), sy(v)
-        tip = f"{t.strftime('%d/%m/%Y %H:%M')} · {_fmt_num(v)}"
+        colour = "var(--danger)" if _breach(v) else "var(--accent)"
+        tip = f"{t.strftime('%d/%m/%Y %H:%M')} · {_fmt_num(v)}{(' ' + unit) if unit else ''}"
         parts.append(
             f'<g><circle cx="{x:.1f}" cy="{y:.1f}" r="9" fill="transparent"/>'
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" fill="var(--accent)"/>'
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" fill="{colour}"/>'
             f"<title>{_esc(tip)}</title></g>"
         )
 
     # Direct label on the last value only.
     lx, ly = sx(t1), sy(ys[-1])
+    last_colour = "var(--danger)" if _breach(ys[-1]) else "var(--text)"
     parts.append(
         f'<text x="{min(lx, _W - _M_RIGHT - 2):.1f}" y="{max(ly - 8, 10):.1f}" '
-        f'text-anchor="end" fill="var(--text)" font-size="11" font-weight="600">'
+        f'text-anchor="end" fill="{last_colour}" font-size="11" font-weight="600">'
         f"{_fmt_num(ys[-1])}</text>"
     )
 

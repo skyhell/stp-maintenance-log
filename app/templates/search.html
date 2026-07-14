@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ t('search.title') }} · {{ t('app.short') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ t('search.title') }}</h1>
+</div>
+
+<form method="get" action="/search" class="card" style="margin-bottom:16px;">
+  <div class="flex flex-wrap">
+    <input type="search" name="q" value="{{ q }}" placeholder="{{ t('search.placeholder') }}"
+           autofocus style="flex:1; min-width:220px;">
+    <button class="btn" type="submit">{{ t('search.submit') }}</button>
+  </div>
+</form>
+
+{% if q and total == 0 %}
+<div class="empty"><span class="emoji">🔍</span>{{ t('search.no_results') }} „{{ q }}"</div>
+{% elif q %}
+<p class="muted">{{ t('search.results_for') }} „{{ q }}" — {{ total }}</p>
+
+{% if entries %}
+<div class="card" style="margin-bottom:16px;">
+  <h2>{{ t('search.entries') }} ({{ entries|length }})</h2>
+  {% for e in entries %}
+  <div class="entry-item">
+    <div class="entry-meta">
+      <span>{{ e.occurred_at|dmy_hm }}</span>
+      {% if e.activity %}· <strong style="color:var(--text)">{{ e.activity.name }}</strong>{% endif %}
+      {% if e.asset %}· {{ e.asset.name }}{% endif %}
+      · <a href="/entries/{{ e.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+    </div>
+    {% if e.description %}<div class="text-sm">{{ e.description|truncate(160) }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if measurements %}
+<div class="card" style="margin-bottom:16px;">
+  <h2>{{ t('search.measurements') }} ({{ measurements|length }})</h2>
+  {% for mm in measurements %}
+  <div class="entry-item">
+    <div class="entry-meta">
+      <span>{{ mm.measured_at|dmy_hm }}</span>
+      · <strong style="color:var(--text)">{{ mm.parameter }}</strong>: {{ mm.value }}
+      · <a href="/measurements/{{ mm.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if assets %}
+<div class="card" style="margin-bottom:16px;">
+  <h2>{{ t('search.objects') }} ({{ assets|length }})</h2>
+  {% for a in assets %}
+  <div class="entry-item">
+    <div class="entry-meta">
+      <strong style="color:var(--text)">{{ a.name }}</strong> · {{ a.uid }}
+      {% if a.address %}· {{ a.address }}{% endif %}
+      · <a href="/assets/{{ a.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

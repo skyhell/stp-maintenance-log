@@ -14,6 +14,7 @@ from app.models.asset import OBJECT_TYPES, Asset
 from app.models.maintenance import MaintenanceEntry
 from app.models.measurement import Measurement
 from app.models.user import User
+from app.services.measurements import parameter_config_map
 from app.services.security import get_current_user
 from app.services.templating import render
 
@@ -74,6 +75,7 @@ def dashboard(
             "due_soon": due_soon,
             "recent": recent,
             "recent_measurements": recent_measurements,
+            "configs": parameter_config_map(db),
             "total_assets": total_assets,
             "total_entries": total_entries,
         },
