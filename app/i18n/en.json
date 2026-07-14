@@ -87,6 +87,8 @@
 
   "measure.title": "Measurements",
   "measure.new": "New measurement",
+  "measure.charts": "Charts",
+  "measure.no_chart_data": "Not enough data for charts (at least two values per measurement required).",
   "measure.edit": "Edit measurement",
   "measure.datetime": "Date / time",
   "measure.parameter": "Measurement",

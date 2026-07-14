@@ -143,7 +143,6 @@ def list_measurements(
         db, parameter, year, date_from, date_to
     )
     parameters = _parameters(db)
-    charts = _build_charts(measurements, parameters)
 
     total = len(measurements)
     pages = max(1, -(-total // PER_PAGE))
@@ -155,11 +154,47 @@ def list_measurements(
         "measurements/list.html",
         {
             "measurements": page_items,
-            "charts": charts,
             "parameters": parameters,
             "years": _data_years(db),
             "page": page,
             "pages": pages,
+            "filters": {
+                "parameter": parameter or "",
+                "year": selected_year,
+                "date_from": date_from or "",
+                "date_to": date_to or "",
+            },
+        },
+        db=db,
+        user=user,
+    )
+
+
+@router.get("/charts")
+def measurement_charts(
+    request: Request,
+    parameter: str | None = None,
+    year: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    measurements, selected_year = _filtered_measurements(
+        db, parameter, year, date_from, date_to
+    )
+    parameters = _parameters(db)
+    # When a single parameter is selected, only chart that one.
+    order = [parameter] if parameter else parameters
+    charts = _build_charts(measurements, order)
+
+    return render(
+        request,
+        "measurements/charts.html",
+        {
+            "charts": charts,
+            "parameters": parameters,
+            "years": _data_years(db),
             "filters": {
                 "parameter": parameter or "",
                 "year": selected_year,

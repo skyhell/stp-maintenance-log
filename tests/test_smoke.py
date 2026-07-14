@@ -920,7 +920,10 @@ def test_measurement_charts():
                 },
                 follow_redirects=False,
             )
-        page = client.get("/measurements?parameter=TREND").text
+        # Charts live on their own page now, not the list.
+        list_page = client.get("/measurements?parameter=TREND").text
+        assert "chart-card" not in list_page
+        page = client.get("/measurements/charts?parameter=TREND").text
         # A trend chart (inline SVG) is rendered for the parameter.
         assert "<svg" in page
         assert "chart-card" in page and "chart-grid" in page

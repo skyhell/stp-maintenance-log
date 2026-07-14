@@ -4,19 +4,11 @@
 {% block content %}
 <div class="page-head">
   <h1>{{ t('measure.title') }}</h1>
-  <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
-</div>
-
-{% if charts %}
-<div class="chart-grid" style="margin-bottom:16px;">
-  {% for name, svg in charts %}
-  <div class="card chart-card">
-    <h3 class="chart-title">{{ name }}</h3>
-    {{ svg | safe }}
+  <div class="flex flex-wrap">
+    <a href="/measurements/charts" class="btn btn-secondary">📈 {{ t('measure.charts') }}</a>
+    <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
   </div>
-  {% endfor %}
 </div>
-{% endif %}
 
 <form method="get" action="/measurements" class="card" style="margin-bottom:16px;">
   <div class="field-row">

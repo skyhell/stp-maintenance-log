@@ -87,6 +87,8 @@
 
   "measure.title": "Messwerte",
   "measure.new": "Neuer Messwert",
+  "measure.charts": "Diagramme",
+  "measure.no_chart_data": "Nicht genügend Daten für Diagramme (mindestens zwei Messwerte je Messung erforderlich).",
   "measure.edit": "Messwert bearbeiten",
   "measure.datetime": "Datum / Uhrzeit",
   "measure.parameter": "Messung",
