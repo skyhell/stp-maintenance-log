@@ -143,6 +143,65 @@
     });
   });
 
+  // ---------- Enlarge measurement charts on click ----------
+  document.addEventListener("DOMContentLoaded", function () {
+    const cards = document.querySelectorAll(".chart-card.zoomable");
+    if (!cards.length) return;
+    const grid = document.querySelector(".chart-grid[data-close-label]");
+    const closeLabel = grid ? grid.getAttribute("data-close-label") : "Close";
+
+    function open(card) {
+      const backdrop = document.createElement("div");
+      backdrop.className = "chart-modal-backdrop";
+
+      const modal = document.createElement("div");
+      modal.className = "chart-modal";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "chart-modal-close";
+      closeBtn.innerHTML = "✕";
+      closeBtn.setAttribute("aria-label", closeLabel);
+      closeBtn.title = closeLabel;
+
+      const inner = document.createElement("div");
+      inner.className = "chart-modal-body";
+      inner.innerHTML = card.innerHTML;
+
+      modal.appendChild(closeBtn);
+      modal.appendChild(inner);
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+      document.body.style.overflow = "hidden";
+
+      function dismiss() {
+        backdrop.remove();
+        document.body.style.overflow = "";
+        document.removeEventListener("keydown", onKey);
+      }
+      function onKey(e) {
+        if (e.key === "Escape") dismiss();
+      }
+      backdrop.addEventListener("click", function (e) {
+        if (e.target === backdrop) dismiss();
+      });
+      closeBtn.addEventListener("click", dismiss);
+      document.addEventListener("keydown", onKey);
+    }
+
+    cards.forEach(function (card) {
+      card.addEventListener("click", function () {
+        open(card);
+      });
+      card.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open(card);
+        }
+      });
+    });
+  });
+
   // ---------- Password visibility (same mechanism as fleetbox) ----------
   // Wrap every password field and inject a show/hide toggle. Done from JS so
   // the button only exists when it can work.

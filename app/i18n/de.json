@@ -88,6 +88,7 @@
   "measure.title": "Messwerte",
   "measure.new": "Neuer Messwert",
   "measure.charts": "Diagramme",
+  "chart.enlarge": "Zum Vergrößern klicken",
   "measure.no_chart_data": "Nicht genügend Daten für Diagramme (mindestens zwei Messwerte je Messung erforderlich).",
   "measure.thresholds": "Grenzwerte",
   "measure.unit": "Einheit",
