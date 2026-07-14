@@ -17,8 +17,9 @@ no external CDN, no API keys.
   description, notes, comment, mandatory **operating-hours counter** reading
   and **multiple image uploads** per entry.
 - **Measurements** — log process values (e.g. NH4, O2, pH) with value,
-  temperature and operating-hours counter; self-building parameter list,
-  per-parameter **trend charts** and a recent-measurements card on the dashboard.
+  temperature and operating-hours counter; self-building parameter list and a
+  recent-measurements card on the dashboard. A dedicated **charts page** draws
+  per-parameter **trend charts** with its own parameter and time-range filter.
 - **Self-building activity list** — new activities are stored automatically the
   first time you type them; the most recently used ones sort to the top.
 - **History & filters** — newest first, **paginated** (25/page), filter by
@@ -65,13 +66,17 @@ no external CDN, no API keys.
 |---------------------|--------------|
 | ![History](docs/screenshots/entry.png) | ![Measurements](docs/screenshots/measurements.png) |
 
-| Map view with pipes | Object management |
-|---------------------|-------------------|
-| ![Map](docs/screenshots/map.png) | ![Objects](docs/screenshots/assets.png) |
+| Measurement charts | Map view with pipes |
+|--------------------|---------------------|
+| ![Charts](docs/screenshots/measurements-charts.png) | ![Map](docs/screenshots/map.png) |
 
-| Plant & PDF report | Dark mode |
-|--------------------|-----------|
-| ![Plant](docs/screenshots/plant.png) | ![Dark mode](docs/screenshots/dashboard-dark.png) |
+| Object management | Plant & PDF report |
+|-------------------|--------------------|
+| ![Objects](docs/screenshots/assets.png) | ![Plant](docs/screenshots/plant.png) |
+
+**Dark mode** — a persistent dark theme across the whole app:
+
+![Dark mode](docs/screenshots/dashboard-dark.png)
 
 ---
 
@@ -246,7 +251,8 @@ Selbst gehostetes **Kläranlagen-Wartungsbuch** für die Anlage, ihre Schächte
 und Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container**.
 
 **Funktionen:** Wartungseinträge mit Bildern und Betriebsstunden-Zählerstand ·
-**Messwerte** (z. B. NH4) mit Temperatur, Zählerstand und **Verlaufsdiagrammen** ·
+**Messwerte** (z. B. NH4) mit Temperatur und Zählerstand samt eigener
+**Diagramm-Seite** mit Verlaufskurven ·
 selbstlernende Tätigkeiten- und Messungs-Dropdowns · paginierte Listen mit
 Filter (Zeitbereich, Objekt, Tätigkeit, Volltext) und **CSV-Export** ·
 Objektverwaltung mit **Wartungsintervall** (nächste Wartung wird automatisch
