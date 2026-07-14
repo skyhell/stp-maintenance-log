@@ -89,6 +89,7 @@
   "measure.new": "Neuer Messwert",
   "measure.charts": "Diagramme",
   "chart.enlarge": "Zum Vergrößern klicken",
+  "chart.readout_hint": "Ins Diagramm klicken, um die X-/Y-Werte des nächsten Punktes abzulesen.",
   "measure.no_chart_data": "Nicht genügend Daten für Diagramme (mindestens zwei Messwerte je Messung erforderlich).",
   "measure.thresholds": "Grenzwerte",
   "measure.unit": "Einheit",

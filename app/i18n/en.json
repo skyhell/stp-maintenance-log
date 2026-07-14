@@ -89,6 +89,7 @@
   "measure.new": "New measurement",
   "measure.charts": "Charts",
   "chart.enlarge": "Click to enlarge",
+  "chart.readout_hint": "Click the chart to read off the nearest point's x/y values.",
   "measure.no_chart_data": "Not enough data for charts (at least two values per measurement required).",
   "measure.thresholds": "Thresholds",
   "measure.unit": "Unit",

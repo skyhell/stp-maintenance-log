@@ -69,6 +69,7 @@ def line_chart_svg(
 
     parts = [
         f'<svg viewBox="0 0 {_W} {_H}" role="img" aria-label="{_esc(label)}" '
+        f'data-axis-x="{_M_LEFT}" data-axis-y="{_H - _M_BOTTOM}" '
         f'style="width:100%; height:auto; display:block;">'
     ]
 
@@ -127,9 +128,13 @@ def line_chart_svg(
     for t, v in points:
         x, y = sx(t), sy(v)
         colour = "var(--danger)" if _breach(v) else "var(--accent)"
-        tip = f"{t.strftime('%d/%m/%Y %H:%M')} · {_fmt_num(v)}{(' ' + unit) if unit else ''}"
+        date_label = t.strftime("%d/%m/%Y %H:%M")
+        val_label = f"{_fmt_num(v)}{(' ' + unit) if unit else ''}"
+        tip = f"{date_label} · {val_label}"
         parts.append(
-            f'<g><circle cx="{x:.1f}" cy="{y:.1f}" r="9" fill="transparent"/>'
+            f'<g class="pt" data-cx="{x:.1f}" data-cy="{y:.1f}" '
+            f'data-date="{_esc(date_label)}" data-value="{_esc(val_label)}">'
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="9" fill="transparent"/>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" fill="{colour}"/>'
             f"<title>{_esc(tip)}</title></g>"
         )

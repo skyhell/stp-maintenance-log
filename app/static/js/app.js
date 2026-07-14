@@ -149,6 +149,78 @@
     if (!cards.length) return;
     const grid = document.querySelector(".chart-grid[data-close-label]");
     const closeLabel = grid ? grid.getAttribute("data-close-label") : "Close";
+    const hintLabel = grid ? grid.getAttribute("data-hint-label") : "";
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    // In the enlarged chart, clicking reads off the nearest point's x/y values
+    // with a crosshair down to each axis.
+    function enableReadout(svg) {
+      const axisX = parseFloat(svg.getAttribute("data-axis-x"));
+      const axisY = parseFloat(svg.getAttribute("data-axis-y"));
+      const vw = svg.viewBox.baseVal.width;
+      const pts = Array.prototype.map.call(
+        svg.querySelectorAll(".pt"),
+        function (g) {
+          return {
+            cx: parseFloat(g.getAttribute("data-cx")),
+            cy: parseFloat(g.getAttribute("data-cy")),
+            date: g.getAttribute("data-date"),
+            value: g.getAttribute("data-value"),
+          };
+        }
+      );
+      if (!pts.length || isNaN(axisX)) return;
+      svg.style.cursor = "crosshair";
+      let layer = null;
+
+      function el(name, attrs) {
+        const n = document.createElementNS(SVG_NS, name);
+        for (const k in attrs) n.setAttribute(k, attrs[k]);
+        return n;
+      }
+      function show(pt) {
+        if (layer) layer.remove();
+        layer = el("g", { class: "xhair" });
+        layer.appendChild(
+          el("line", { class: "xhair-line", x1: pt.cx, y1: pt.cy, x2: pt.cx, y2: axisY })
+        );
+        layer.appendChild(
+          el("line", { class: "xhair-line", x1: pt.cx, y1: pt.cy, x2: axisX, y2: pt.cy })
+        );
+        layer.appendChild(el("circle", { class: "xhair-dot", cx: pt.cx, cy: pt.cy, r: 5 }));
+
+        const w = Math.max(pt.date.length, pt.value.length) * 5.6 + 14;
+        const h = 30;
+        let bx = pt.cx + 10;
+        let by = pt.cy - h - 8;
+        if (bx + w > vw - 2) bx = pt.cx - w - 10;
+        if (by < 2) by = pt.cy + 10;
+        layer.appendChild(el("rect", { class: "xhair-box", x: bx, y: by, width: w, height: h, rx: 6 }));
+        const dt = el("text", { class: "xhair-text", x: bx + 7, y: by + 13 });
+        dt.textContent = pt.date;
+        layer.appendChild(dt);
+        const vt = el("text", { class: "xhair-text xhair-value", x: bx + 7, y: by + 25 });
+        vt.textContent = pt.value;
+        layer.appendChild(vt);
+        svg.appendChild(layer);
+      }
+      svg.addEventListener("click", function (evt) {
+        const p = svg.createSVGPoint();
+        p.x = evt.clientX;
+        p.y = evt.clientY;
+        const loc = p.matrixTransform(svg.getScreenCTM().inverse());
+        let best = pts[0];
+        let bestDist = Infinity;
+        pts.forEach(function (pt) {
+          const d = Math.abs(pt.cx - loc.x);
+          if (d < bestDist) {
+            bestDist = d;
+            best = pt;
+          }
+        });
+        show(best);
+      });
+    }
 
     function open(card) {
       const backdrop = document.createElement("div");
@@ -168,11 +240,21 @@
       inner.className = "chart-modal-body";
       inner.innerHTML = card.innerHTML;
 
+      if (hintLabel) {
+        const hint = document.createElement("p");
+        hint.className = "chart-modal-hint";
+        hint.textContent = hintLabel;
+        inner.appendChild(hint);
+      }
+
       modal.appendChild(closeBtn);
       modal.appendChild(inner);
       backdrop.appendChild(modal);
       document.body.appendChild(backdrop);
       document.body.style.overflow = "hidden";
+
+      const svg = inner.querySelector("svg");
+      if (svg) enableReadout(svg);
 
       function dismiss() {
         backdrop.remove();

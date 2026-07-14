@@ -42,7 +42,8 @@
 </form>
 
 {% if charts %}
-<div class="chart-grid" data-close-label="{{ t('common.close') }}">
+<div class="chart-grid" data-close-label="{{ t('common.close') }}"
+     data-hint-label="{{ t('chart.readout_hint') }}">
   {% for name, svg in charts %}
   <div class="card chart-card zoomable" role="button" tabindex="0"
        aria-label="{{ name }} — {{ t('chart.enlarge') }}" title="{{ t('chart.enlarge') }}">
