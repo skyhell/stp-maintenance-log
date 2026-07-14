@@ -18,8 +18,14 @@ no external CDN, no API keys.
   and **multiple image uploads** per entry.
 - **Measurements** — log process values (e.g. NH4, O2, pH) with value,
   temperature and operating-hours counter; self-building parameter list and a
-  recent-measurements card on the dashboard. A dedicated **charts page** draws
-  per-parameter **trend charts** with its own parameter and time-range filter.
+  recent-measurements card on the dashboard. Set an optional **unit** and a
+  **warning threshold** (min/max) per parameter; out-of-range values are flagged
+  red in the list, on the dashboard and in charts.
+- **Trend charts** — a dedicated charts page draws a per-parameter line chart
+  (with unit and dashed threshold lines). Click a chart to **enlarge** it, then
+  click inside to read off the nearest point's **x/y values** via a crosshair.
+- **Global search** — one header search box across maintenance entries,
+  measurements and objects.
 - **Self-building activity list** — new activities are stored automatically the
   first time you type them; the most recently used ones sort to the top.
 - **History & filters** — newest first, **paginated** (25/page), filter by
@@ -73,6 +79,10 @@ no external CDN, no API keys.
 | Object management | Plant & PDF report |
 |-------------------|--------------------|
 | ![Objects](docs/screenshots/assets.png) | ![Plant](docs/screenshots/plant.png) |
+
+| Enlarged chart with x/y readout | Global search |
+|---------------------------------|---------------|
+| ![Chart readout](docs/screenshots/chart-readout.png) | ![Search](docs/screenshots/search.png) |
 
 **Dark mode** — a persistent dark theme across the whole app:
 
@@ -251,8 +261,11 @@ Selbst gehostetes **Kläranlagen-Wartungsbuch** für die Anlage, ihre Schächte
 und Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container**.
 
 **Funktionen:** Wartungseinträge mit Bildern und Betriebsstunden-Zählerstand ·
-**Messwerte** (z. B. NH4) mit Temperatur und Zählerstand samt eigener
-**Diagramm-Seite** mit Verlaufskurven ·
+**Messwerte** (z. B. NH4) mit Temperatur und Zählerstand, je Messgröße
+optionaler **Einheit** und **Grenzwert** (Über-/Unterschreitung wird rot
+markiert), samt eigener **Diagramm-Seite** mit Verlaufskurven, Grenzwertlinien,
+Klick-zum-Vergrößern und Achsen-Ablesung ·
+**globale Suche** über Einträge, Messwerte und Objekte ·
 selbstlernende Tätigkeiten- und Messungs-Dropdowns · paginierte Listen mit
 Filter (Zeitbereich, Objekt, Tätigkeit, Volltext) und **CSV-Export** ·
 Objektverwaltung mit **Wartungsintervall** (nächste Wartung wird automatisch
