@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     reminder_due_soon_days: int = 30
     max_upload_mb: int = 10
 
+    # Brute-force protection: failed login/2FA attempts per client IP.
+    rate_limit_max_attempts: int = 5
+    rate_limit_window_seconds: int = 300
+
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_password: str = "changeme"
 

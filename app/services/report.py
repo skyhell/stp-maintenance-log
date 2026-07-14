@@ -6,12 +6,14 @@ import io
 import json
 from datetime import date, datetime
 
+from PIL import Image as PILImage
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    Image,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -20,11 +22,17 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.config import settings
 from app.models.asset import Asset
 from app.models.asset_event import AssetEvent
 from app.models.maintenance import MaintenanceEntry
 from app.models.measurement import Measurement
 from app.services.i18n import Translator
+
+# Thumbnail box in the report (points); images are scaled to fit inside.
+_THUMB = 24 * mm
+_THUMBS_PER_ROW = 6
+_THUMB_PX = 220  # max decoded pixel size before embedding
 
 
 def _fmt(value) -> str:
@@ -59,9 +67,64 @@ def _entry_details(e: MaintenanceEntry, t: Translator) -> str:
         lines.append(f"{t('entry.comment')}: {e.comment}")
     if e.operating_hours is not None:
         lines.append(f"{t('entry.operating_hours')}: {e.operating_hours} h")
-    if e.images:
-        lines.append(f"{t('entry.images')}: {len(e.images)}")
     return "\n".join(lines) or "—"
+
+
+def _thumbnail_flowable(path):
+    """Fully decode, downscale and re-encode one image to a clean in-memory
+    PNG, returning a reportlab Image sized to the thumbnail box — or None if the
+    file cannot be read (e.g. HEIC without a decoder, or a corrupt upload).
+
+    Decoding here (rather than at draw time) guarantees the report never fails
+    during doc.build() because of one bad image.
+    """
+    try:
+        with PILImage.open(path) as im:
+            im = im.convert("RGB")
+            im.thumbnail((_THUMB_PX, _THUMB_PX))
+            iw, ih = im.size
+            buf = io.BytesIO()
+            im.save(buf, format="PNG")
+        buf.seek(0)
+        scale = min(_THUMB / iw, _THUMB / ih)
+        return Image(buf, width=iw * scale, height=ih * scale)
+    except Exception:
+        return None
+
+
+def _thumbnails(e: MaintenanceEntry):
+    """Return a small grid Table of image thumbnails, or None."""
+    thumbs = []
+    for img in e.images:
+        path = settings.upload_path / img.filename
+        if not path.is_file():
+            continue
+        flowable = _thumbnail_flowable(path)
+        if flowable is not None:
+            thumbs.append(flowable)
+    if not thumbs:
+        return None
+    grid = [
+        thumbs[i : i + _THUMBS_PER_ROW]
+        for i in range(0, len(thumbs), _THUMBS_PER_ROW)
+    ]
+    # Pad the last row so the Table is rectangular.
+    for row in grid:
+        while len(row) < _THUMBS_PER_ROW:
+            row.append("")
+    tbl = Table(grid, colWidths=[_THUMB + 4] * _THUMBS_PER_ROW)
+    tbl.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return tbl
 
 
 def _measurement_details(m: Measurement, t: Translator) -> str:
@@ -117,7 +180,8 @@ def build_plant_report(
     )
 
     # One chronological stream (oldest first) across all three sources.
-    rows: list[tuple[datetime, str, str, str]] = []
+    # Each row: (occurred, type_label, username, details_text, entry_or_None).
+    rows: list[tuple[datetime, str, str, str, MaintenanceEntry | None]] = []
     for e in entries:
         rows.append(
             (
@@ -125,6 +189,7 @@ def build_plant_report(
                 t("report.type.entry"),
                 e.user.username if e.user else "—",
                 _entry_details(e, t),
+                e,
             )
         )
     for m in measurements:
@@ -134,6 +199,7 @@ def build_plant_report(
                 t("report.type.measurement"),
                 m.user.username if m.user else "—",
                 _measurement_details(m, t),
+                None,
             )
         )
     for ev in events:
@@ -143,6 +209,7 @@ def build_plant_report(
                 t("report.type.asset"),
                 ev.user.username if ev.user else "—",
                 _event_details(ev, t),
+                None,
             )
         )
     rows.sort(key=lambda r: (r[0].replace(tzinfo=None) if r[0].tzinfo else r[0]))
@@ -257,13 +324,17 @@ def build_plant_report(
             _p(t("report.details"), head),
         ]
     ]
-    for occurred, type_label, username, details in rows:
+    for occurred, type_label, username, details, entry in rows:
+        detail_cell = _p(details, cell)
+        thumbs = _thumbnails(entry) if entry is not None else None
+        if thumbs is not None:
+            detail_cell = [detail_cell, Spacer(1, 3), thumbs]
         data.append(
             [
                 _p(occurred.strftime("%d/%m/%Y %H:%M"), cell),
                 _p(type_label, cell),
                 _p(username, cell),
-                _p(details, cell),
+                detail_cell,
             ]
         )
 

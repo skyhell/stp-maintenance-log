@@ -831,6 +831,118 @@ def test_admin_password_confirmation():
         assert client.get("/").status_code == 200
 
 
+def test_csv_exports():
+    with _client() as client:
+        _login(client)
+
+        # An entry and a measurement to export.
+        token = _csrf(client, "/entries/new")
+        client.post(
+            "/entries/new",
+            data={
+                "csrf_token": token,
+                "occurred_date": "2024-09-01",
+                "occurred_time": "07:30",
+                "activity": "CSV-Check",
+                "description": "export me",
+                "operating_hours": "42",
+            },
+            follow_redirects=False,
+        )
+        client.post(
+            "/measurements/new",
+            data={
+                "csrf_token": token,
+                "measured_date": "2024-09-01",
+                "measured_time": "08:00",
+                "parameter": "CSVpar",
+                "value": "3,3",
+                "temperature": "12",
+                "operating_hours": "43",
+            },
+            follow_redirects=False,
+        )
+
+        r = client.get("/entries/export.csv")
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/csv")
+        body = r.content.decode("utf-8-sig")
+        assert "export me" in body and "CSV-Check" in body and ";" in body
+
+        r = client.get("/measurements/export.csv")
+        assert r.status_code == 200
+        body = r.content.decode("utf-8-sig")
+        assert "CSVpar" in body and "3.3" in body
+
+
+def test_entries_pagination():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/entries/new")
+        # 27 entries -> two pages at 25 per page.
+        for i in range(27):
+            client.post(
+                "/entries/new",
+                data={
+                    "csrf_token": token,
+                    "occurred_date": "2024-10-01",
+                    "occurred_time": "09:00",
+                    "activity": "Bulk",
+                    "description": f"bulk-entry-{i:02d}",
+                    "operating_hours": str(i),
+                },
+                follow_redirects=False,
+            )
+        page1 = client.get("/entries").text
+        assert "Page 1 of 2" in page1 or "Seite 1 von 2" in page1
+        assert 'href="/entries?' in page1  # a pagination link exists
+        page2 = client.get("/entries?page=2").text
+        # 27 entries: page 1 has 25, page 2 has 2 -> the two oldest.
+        assert "bulk-entry-00" in page2
+        assert "bulk-entry-26" not in page2
+
+
+def test_measurement_charts():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/measurements/new")
+        for i, val in enumerate(("1.0", "2.0", "3.0")):
+            client.post(
+                "/measurements/new",
+                data={
+                    "csrf_token": token,
+                    "measured_date": f"2024-11-0{i + 1}",
+                    "measured_time": "09:00",
+                    "parameter": "TREND",
+                    "value": val,
+                    "temperature": "10",
+                    "operating_hours": "1",
+                },
+                follow_redirects=False,
+            )
+        page = client.get("/measurements?parameter=TREND").text
+        # A trend chart (inline SVG) is rendered for the parameter.
+        assert "<svg" in page
+        assert "chart-card" in page and "chart-grid" in page
+
+
+def test_login_rate_limit():
+    from app.routers.auth import _login_limiter
+
+    _login_limiter.reset_all()
+    try:
+        with _client() as client:
+            # Exceed the attempt budget with wrong passwords.
+            for _ in range(5):
+                r = _login(client, "admin", "wrong-password")
+                assert r.status_code == 401
+            # Further attempts are throttled, even with the correct password.
+            r = _login(client, "admin", "adminpass123")
+            assert r.status_code == 429
+    finally:
+        _login_limiter.reset_all()
+
+
 def test_2fa_enable_and_login():
     import re
 

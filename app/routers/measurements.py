@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.models.measurement import Measurement
 from app.models.user import User
+from app.services.charts import line_chart_svg
+from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
 from app.services.security import get_current_user, verify_csrf
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/measurements")
+
+PER_PAGE = 25
+MAX_CHARTS = 6
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -74,16 +81,13 @@ def _data_years(db: Session) -> list[int]:
     return list(range(date.today().year, first - 1, -1))
 
 
-@router.get("")
-def list_measurements(
-    request: Request,
-    parameter: str | None = None,
-    year: str | None = None,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
+def _filtered_measurements(
+    db: Session,
+    parameter: str | None,
+    year: str | None,
+    date_from: str | None,
+    date_to: str | None,
+) -> tuple[list[Measurement], str]:
     stmt = (
         select(Measurement)
         .options(selectinload(Measurement.user))
@@ -103,15 +107,59 @@ def list_measurements(
         stmt = stmt.where(Measurement.measured_at >= datetime.combine(df, time.min, UTC))
     if dt_:
         stmt = stmt.where(Measurement.measured_at <= datetime.combine(dt_, time.max, UTC))
+    return list(db.scalars(stmt).all()), selected_year
 
-    measurements = list(db.scalars(stmt).all())
+
+def _build_charts(
+    measurements: list[Measurement], param_order: list[str]
+) -> list[tuple[str, str]]:
+    """One trend chart per parameter (most recently used first)."""
+    charts = []
+    for param in param_order:
+        points = sorted(
+            (m.measured_at, m.value)
+            for m in measurements
+            if m.parameter == param and m.value is not None
+        )
+        if len(points) >= 2:
+            charts.append((param, line_chart_svg(points, param)))
+        if len(charts) >= MAX_CHARTS:
+            break
+    return charts
+
+
+@router.get("")
+def list_measurements(
+    request: Request,
+    parameter: str | None = None,
+    year: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    page: int = 1,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    measurements, selected_year = _filtered_measurements(
+        db, parameter, year, date_from, date_to
+    )
+    parameters = _parameters(db)
+    charts = _build_charts(measurements, parameters)
+
+    total = len(measurements)
+    pages = max(1, -(-total // PER_PAGE))
+    page = min(max(1, page), pages)
+    page_items = measurements[(page - 1) * PER_PAGE : page * PER_PAGE]
+
     return render(
         request,
         "measurements/list.html",
         {
-            "measurements": measurements,
-            "parameters": _parameters(db),
+            "measurements": page_items,
+            "charts": charts,
+            "parameters": parameters,
             "years": _data_years(db),
+            "page": page,
+            "pages": pages,
             "filters": {
                 "parameter": parameter or "",
                 "year": selected_year,
@@ -121,6 +169,51 @@ def list_measurements(
         },
         db=db,
         user=user,
+    )
+
+
+@router.get("/export.csv")
+def export_csv(
+    request: Request,
+    parameter: str | None = None,
+    year: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    measurements, _ = _filtered_measurements(db, parameter, year, date_from, date_to)
+    t = get_translator(normalize_lang(request.cookies.get(LANGUAGE_COOKIE)))
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";", lineterminator="\n")
+    writer.writerow(
+        [
+            t("measure.datetime"),
+            t("measure.parameter"),
+            t("measure.value"),
+            t("measure.temperature"),
+            t("measure.operating_hours"),
+            t("entry.user"),
+        ]
+    )
+    for m in measurements:
+        writer.writerow(
+            [
+                m.measured_at.strftime("%d/%m/%Y %H:%M"),
+                m.parameter,
+                m.value if m.value is not None else "",
+                m.temperature if m.temperature is not None else "",
+                m.operating_hours if m.operating_hours is not None else "",
+                m.user.username if m.user else "",
+            ]
+        )
+    # UTF-8 BOM (U+FEFF) so Excel opens umlauts correctly.
+    bom = "﻿"
+    return Response(
+        content=bom + buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="measurements.csv"'},
     )
 
 

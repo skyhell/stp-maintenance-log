@@ -23,3 +23,34 @@
           onclick="startSpeech('{{ target_id }}', this, '{{ 'de-DE' if lang == 'de' else 'en-US' }}')"
           title="{{ t('speech.start') }}">🎤</button>
 {% endmacro %}
+
+{# Build a "?k=v&..." query string from the active filters, dropping empties
+   and overriding `page`. Values are URL-encoded. #}
+{% macro query_string(filters, page) %}
+  {%- set parts = [] -%}
+  {%- for k, v in filters.items() -%}
+    {%- if v is not none and v != '' -%}
+      {%- set _ = parts.append(k ~ '=' ~ (v | string | urlencode)) -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set _ = parts.append('page=' ~ page) -%}
+  ?{{ parts | join('&') }}
+{%- endmacro %}
+
+{% macro pagination(base_url, filters, page, pages, t) %}
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a class="btn btn-secondary btn-sm" href="{{ base_url }}{{ query_string(filters, page - 1) }}">← {{ t('common.prev') }}</a>
+    {% else %}
+    <span class="btn btn-secondary btn-sm" style="opacity:.4; pointer-events:none;">← {{ t('common.prev') }}</span>
+    {% endif %}
+    <span class="text-sm muted">{{ t('common.page_of', page=page, pages=pages) }}</span>
+    {% if page < pages %}
+    <a class="btn btn-secondary btn-sm" href="{{ base_url }}{{ query_string(filters, page + 1) }}">{{ t('common.next') }} →</a>
+    {% else %}
+    <span class="btn btn-secondary btn-sm" style="opacity:.4; pointer-events:none;">{{ t('common.next') }} →</span>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endmacro %}

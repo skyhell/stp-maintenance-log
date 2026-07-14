@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services.i18n import LANGUAGE_COOKIE, normalize_lang
+from app.services.ratelimit import RateLimiter, client_key
 from app.services.security import (
     SESSION_PENDING_2FA,
     authenticate,
@@ -20,6 +22,11 @@ from app.services.templating import render
 from app.services.twofa import verify_and_consume_backup_code, verify_totp
 
 router = APIRouter()
+
+# Shared limiter for password and 2FA attempts (per client IP), like fleetbox.
+_login_limiter = RateLimiter(
+    settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
+)
 
 
 @router.get("/login")
@@ -38,8 +45,15 @@ def login_submit(
     db: Session = Depends(get_db),
 ):
     verify_csrf(request, csrf_token)
+    key = client_key(request)
+    if not _login_limiter.is_allowed(key):
+        return render(
+            request, "auth/login.html", {"error": "login.too_many"}, db=db, status_code=429
+        )
+
     user = authenticate(db, username.strip(), password)
     if not user:
+        _login_limiter.record_failure(key)
         return render(
             request, "auth/login.html", {"error": "login.error"}, db=db, status_code=401
         )
@@ -48,6 +62,7 @@ def login_submit(
         request.session[SESSION_PENDING_2FA] = user.id
         return RedirectResponse("/login/2fa", status_code=303)
 
+    _login_limiter.reset(key)
     login_user(request, user)
     return RedirectResponse("/", status_code=303)
 
@@ -70,6 +85,13 @@ def twofa_submit(
     pending_id = request.session.get(SESSION_PENDING_2FA)
     if not pending_id:
         return RedirectResponse("/login", status_code=303)
+
+    key = client_key(request)
+    if not _login_limiter.is_allowed(key):
+        return render(
+            request, "auth/twofa.html", {"error": "login.too_many"}, db=db, status_code=429
+        )
+
     user = db.get(User, pending_id)
     if not user or not user.totp_enabled:
         request.session.pop(SESSION_PENDING_2FA, None)
@@ -82,10 +104,12 @@ def twofa_submit(
         if ok:
             db.commit()
     if not ok:
+        _login_limiter.record_failure(key)
         return render(
             request, "auth/twofa.html", {"error": "twofa.invalid"}, db=db, status_code=401
         )
 
+    _login_limiter.reset(key)
     request.session.pop(SESSION_PENDING_2FA, None)
     login_user(request, user)
     return RedirectResponse("/", status_code=303)

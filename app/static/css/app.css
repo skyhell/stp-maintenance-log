@@ -230,6 +230,20 @@ input:focus, select:focus, textarea:focus {
 textarea { resize: vertical; min-height: 90px; }
 .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .field-row > .field { flex: 1; min-width: 150px; }
+
+/* Measurement trend charts */
+.chart-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.chart-card { padding: 14px 16px 10px; }
+.chart-title { margin: 0 0 6px; font-size: 0.95rem; }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; gap: 14px;
+  justify-content: center; margin-top: 18px;
+}
 .input-with-btn { display: flex; gap: 8px; }
 .input-with-btn > input, .input-with-btn > select { flex: 1; }
 

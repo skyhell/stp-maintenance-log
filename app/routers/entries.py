@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -14,12 +16,15 @@ from app.models.asset import Asset
 from app.models.maintenance import EntryImage, MaintenanceEntry
 from app.models.user import User
 from app.services.activities import get_or_create_activity, list_activities
+from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
 from app.services.maintenance_schedule import refresh_next_maintenance
 from app.services.security import get_current_user, verify_csrf
 from app.services.storage import UploadError, delete_upload, save_upload
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/entries")
+
+PER_PAGE = 25
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -132,6 +137,7 @@ def history(
     q: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
+    page: int = 1,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -140,14 +146,21 @@ def history(
     )
     assets = list(db.scalars(select(Asset).order_by(Asset.name)).all())
 
+    total = len(entries)
+    pages = max(1, -(-total // PER_PAGE))
+    page = min(max(1, page), pages)
+    page_items = entries[(page - 1) * PER_PAGE : page * PER_PAGE]
+
     return render(
         request,
         "entries/list.html",
         {
-            "entries": entries,
+            "entries": page_items,
             "assets": assets,
             "activities": list_activities(db),
             "years": _data_years(db),
+            "page": page,
+            "pages": pages,
             "filters": {
                 "asset_id": selected_asset,
                 "activity_id": selected_activity,
@@ -159,6 +172,60 @@ def history(
         },
         db=db,
         user=user,
+    )
+
+
+@router.get("/export.csv")
+def export_csv(
+    request: Request,
+    asset_id: str | None = None,
+    activity_id: str | None = None,
+    year: str | None = None,
+    q: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    entries, _, _ = _filtered_entries(
+        db, asset_id, activity_id, year, q, date_from, date_to
+    )
+    t = get_translator(normalize_lang(request.cookies.get(LANGUAGE_COOKIE)))
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";", lineterminator="\n")
+    writer.writerow(
+        [
+            t("entry.datetime"),
+            t("entry.user"),
+            t("entry.activity"),
+            t("entry.asset"),
+            t("entry.operating_hours"),
+            t("entry.description"),
+            t("entry.notes"),
+            t("entry.comment"),
+            t("entry.images"),
+        ]
+    )
+    for e in entries:
+        writer.writerow(
+            [
+                e.occurred_at.strftime("%d/%m/%Y %H:%M"),
+                e.user.username if e.user else "",
+                e.activity.name if e.activity else "",
+                f"{e.asset.name} ({e.asset.uid})" if e.asset else "",
+                e.operating_hours if e.operating_hours is not None else "",
+                e.description or "",
+                e.notes or "",
+                e.comment or "",
+                len(e.images),
+            ]
+        )
+    bom = "﻿"
+    return Response(
+        content=bom + buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="maintenance-entries.csv"'},
     )
 
 

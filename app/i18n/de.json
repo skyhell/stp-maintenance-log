@@ -34,6 +34,9 @@
   "common.close": "Schließen",
   "common.date": "Datum",
   "common.time": "Uhrzeit (24 h)",
+  "common.prev": "Zurück",
+  "common.next": "Weiter",
+  "common.page_of": "Seite {page} von {pages}",
 
   "footer.docs": "Dokumentation",
   "theme.toggle": "Design wechseln",
@@ -44,6 +47,7 @@
   "login.password": "Passwort",
   "login.submit": "Anmelden",
   "login.error": "Benutzername oder Passwort falsch.",
+  "login.too_many": "Zu viele Versuche. Bitte einige Minuten warten.",
   "login.welcome": "Willkommen zurück",
 
   "dashboard.title": "Dashboard",
