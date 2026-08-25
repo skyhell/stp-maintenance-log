@@ -18,14 +18,14 @@ no external CDN, no API keys.
   and **multiple image uploads** per entry.
 - **Measurements** — log process values (e.g. NH4, O2, pH) with value,
   temperature and operating-hours counter; self-building parameter list and a
-  recent-measurements card on the dashboard. Set an optional **unit** and a
-  **warning threshold** (min/max) per parameter; out-of-range values are flagged
-  red in the list, on the dashboard and in charts.
+  recent-measurements card on the dashboard. Admins set an optional **unit**
+  and a **warning threshold** (min/max) per parameter; out-of-range values are
+  flagged red in the list, on the dashboard and in charts.
 - **Trend charts** — a dedicated charts page draws a per-parameter line chart
   (with unit and dashed threshold lines). Click a chart to **enlarge** it, then
   click inside to read off the nearest point's **x/y values** via a crosshair.
-- **Global search** — one header search box across maintenance entries,
-  measurements and objects.
+- **Global search** — one header search box (a search icon on phones) across
+  maintenance entries, measurements and objects.
 - **Self-building activity list** — new activities are stored automatically the
   first time you type them; the most recently used ones sort to the top.
 - **History & filters** — newest first, **paginated** (25/page), filter by
@@ -262,10 +262,11 @@ und Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container*
 
 **Funktionen:** Wartungseinträge mit Bildern und Betriebsstunden-Zählerstand ·
 **Messwerte** (z. B. NH4) mit Temperatur und Zählerstand, je Messgröße
-optionaler **Einheit** und **Grenzwert** (Über-/Unterschreitung wird rot
-markiert), samt eigener **Diagramm-Seite** mit Verlaufskurven, Grenzwertlinien,
-Klick-zum-Vergrößern und Achsen-Ablesung ·
-**globale Suche** über Einträge, Messwerte und Objekte ·
+optionaler **Einheit** und **Grenzwert** (von Administratoren gepflegt,
+Über-/Unterschreitung wird rot markiert), samt eigener **Diagramm-Seite** mit
+Verlaufskurven, Grenzwertlinien, Klick-zum-Vergrößern und Achsen-Ablesung ·
+**globale Suche** über Einträge, Messwerte und Objekte (am Handy über das
+Lupen-Symbol) ·
 selbstlernende Tätigkeiten- und Messungs-Dropdowns · paginierte Listen mit
 Filter (Zeitbereich, Objekt, Tätigkeit, Volltext) und **CSV-Export** ·
 Objektverwaltung mit **Wartungsintervall** (nächste Wartung wird automatisch
