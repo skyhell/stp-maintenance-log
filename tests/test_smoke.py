@@ -1042,6 +1042,157 @@ def test_global_search():
         assert client.get("/search").status_code == 200
 
 
+def _seed_measurement(client, parameter="THRESH", value="5"):
+    token = _csrf(client, "/measurements/new")
+    return client.post(
+        "/measurements/new",
+        data={
+            "csrf_token": token,
+            "measured_date": "2024-12-01",
+            "measured_time": "09:00",
+            "parameter": parameter,
+            "value": value,
+            "temperature": "10",
+            "operating_hours": "1",
+        },
+        follow_redirects=False,
+    )
+
+
+def _save_thresholds(client, **fields):
+    token = _csrf(client, "/measurements/parameters")
+    return client.post(
+        "/measurements/parameters",
+        data={"csrf_token": token, **fields},
+        follow_redirects=False,
+    )
+
+
+def test_threshold_input_is_validated():
+    with _client() as client:
+        _login(client)
+        _seed_measurement(client)
+
+        # A valid band is stored.
+        r = _save_thresholds(
+            client, count="1", name_0="THRESH", unit_0="mg/l", min_0="0", max_0="10"
+        )
+        assert r.status_code == 303
+
+        # A typo in max must not silently wipe the saved threshold.
+        r = _save_thresholds(
+            client, count="1", name_0="THRESH", unit_0="mg/l", min_0="0", max_0="1o"
+        )
+        assert r.status_code == 400
+        page = client.get("/measurements/parameters").text
+        assert 'value="10"' in page  # still there
+        # The rejected input is handed back for correction.
+        assert "1o" in r.text
+
+        # min > max is refused too.
+        r = _save_thresholds(
+            client, count="1", name_0="THRESH", unit_0="mg/l", min_0="10", max_0="5"
+        )
+        assert r.status_code == 400
+
+        # A junk count is not a 500, and a huge one cannot spin the event loop.
+        assert _save_thresholds(client, count="abc", name_0="THRESH").status_code == 303
+        assert (
+            _save_thresholds(
+                client, count="2000000000", name_0="THRESH", min_0="0", max_0="10"
+            ).status_code
+            == 303
+        )
+
+        # Clearing every field still removes the configuration.
+        r = _save_thresholds(
+            client, count="1", name_0="THRESH", unit_0="", min_0="", max_0=""
+        )
+        assert r.status_code == 303
+        assert "mg/l" not in client.get("/measurements?parameter=THRESH").text
+
+
+def test_threshold_config_is_admin_only():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/admin/users")
+        client.post(
+            "/admin/users/new",
+            data={
+                "csrf_token": token,
+                "username": "worker2",
+                "password": "workerpass123",
+                "password_confirm": "workerpass123",
+                "role": "user",
+            },
+            follow_redirects=False,
+        )
+        client.get("/logout")
+        _login(client, "worker2", "workerpass123")
+
+        assert client.get("/measurements/parameters", follow_redirects=False).status_code == 403
+        token = _csrf(client, "/measurements/new")
+        r = client.post(
+            "/measurements/parameters",
+            data={"csrf_token": token, "count": "1", "name_0": "X", "max_0": "1"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 403
+        # The entry point is hidden for non-admins.
+        assert "/measurements/parameters" not in client.get("/measurements").text
+
+
+def test_orphaned_threshold_stays_editable():
+    with _client() as client:
+        _login(client)
+        _seed_measurement(client, parameter="GONE")
+        assert _save_thresholds(
+            client, count="1", name_0="GONE", unit_0="mg/l", min_0="0", max_0="10"
+        ).status_code == 303
+
+        # Delete the only measurement carrying that parameter.
+        import re
+
+        page = client.get("/measurements?parameter=GONE").text
+        mid = re.search(r"/measurements/(\d+)/edit", page).group(1)
+        token = _csrf(client, f"/measurements/{mid}/edit")
+        client.post(
+            f"/measurements/{mid}/delete",
+            data={"csrf_token": token},
+            follow_redirects=False,
+        )
+
+        # Its configuration must remain reachable rather than silently linger.
+        assert "GONE" in client.get("/measurements/parameters").text
+
+
+def test_search_treats_wildcards_literally():
+    with _client() as client:
+        _login(client)
+        token = _csrf(client, "/assets/new")
+        client.post(
+            "/assets/new",
+            data={
+                "csrf_token": token,
+                "name": "Wildcard shaft",
+                "type": "shaft",
+                "uid": "SCH_01",
+            },
+            follow_redirects=False,
+        )
+
+        # Search stays reachable on phones, where the nav input is hidden.
+        assert 'class="icon-btn nav-search-link"' in client.get("/measurements").text
+
+        # A bare "%" must not dump the whole database.
+        page = client.get("/search?q=%25").text
+        assert "Wildcard shaft" not in page
+
+        # "_" is a literal character, not a single-character wildcard.
+        assert "Wildcard shaft" in client.get("/search?q=SCH_01").text
+        assert "Wildcard shaft" not in client.get("/search?q=SCHX01").text
+
+
 def test_2fa_enable_and_login():
     import re
 

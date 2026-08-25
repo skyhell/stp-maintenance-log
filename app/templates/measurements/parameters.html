@@ -8,6 +8,10 @@
 
 <p class="muted">{{ t('measure.threshold_hint') }}</p>
 
+{% if form_error %}
+<div class="flash flash-error">{{ t(form_error) }}</div>
+{% endif %}
+
 <form method="post" action="/measurements/parameters" class="card">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <input type="hidden" name="count" value="{{ rows|length }}">
@@ -28,10 +32,11 @@
           <td>
             <strong>{{ row.name }}</strong>
             <input type="hidden" name="name_{{ loop.index0 }}" value="{{ row.name }}">
+            {% if row.error %}<div class="field-error">{{ t(row.error) }}</div>{% endif %}
           </td>
-          <td><input type="text" name="unit_{{ loop.index0 }}" value="{{ row.cfg.unit or '' }}" placeholder="mg/l" style="max-width:120px;"></td>
-          <td><input type="text" inputmode="decimal" name="min_{{ loop.index0 }}" value="{{ row.cfg.min_value if row.cfg and row.cfg.min_value is not none else '' }}" style="max-width:120px;"></td>
-          <td><input type="text" inputmode="decimal" name="max_{{ loop.index0 }}" value="{{ row.cfg.max_value if row.cfg and row.cfg.max_value is not none else '' }}" style="max-width:120px;"></td>
+          <td><input type="text" name="unit_{{ loop.index0 }}" value="{{ row.unit }}" placeholder="mg/l" style="max-width:120px;"></td>
+          <td><input type="text" inputmode="decimal" name="min_{{ loop.index0 }}" value="{{ row.min }}" style="max-width:120px;"></td>
+          <td><input type="text" inputmode="decimal" name="max_{{ loop.index0 }}" value="{{ row.max }}" style="max-width:120px;"></td>
         </tr>
         {% endfor %}
       </tbody>

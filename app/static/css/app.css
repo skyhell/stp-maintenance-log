@@ -272,6 +272,7 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* Out-of-range measurement value */
 .measure-warn { color: var(--danger); font-weight: 600; }
+.field-error { color: var(--danger); font-size: 0.78rem; margin-top: 4px; }
 
 /* Nav search box */
 .nav-search { display: flex; }
@@ -281,7 +282,13 @@ textarea { resize: vertical; min-height: 90px; }
   color: var(--text);
 }
 .nav-search input:focus { outline: none; border-color: var(--accent); }
-@media (max-width: 720px) { .nav-search { display: none; } }
+/* On phones the input would squeeze .nav-links to zero width, so swap it for
+   an icon linking to the search page, which carries a full-width form. */
+.nav-search-link { display: none; }
+@media (max-width: 720px) {
+  .nav-search { display: none; }
+  .nav-search-link { display: inline-flex; }
+}
 
 /* Pagination */
 .pagination {

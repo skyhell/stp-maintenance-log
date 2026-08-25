@@ -18,6 +18,18 @@ from app.services.templating import render
 router = APIRouter()
 
 LIMIT = 50
+LIKE_ESCAPE = "\\"
+
+
+def _like_pattern(q: str) -> str:
+    """Wrap the query in wildcards, escaping the ones the user typed so that
+    `%` and `_` (common in uids like SCH_01) match literally."""
+    escaped = (
+        q.replace(LIKE_ESCAPE, LIKE_ESCAPE * 2)
+        .replace("%", LIKE_ESCAPE + "%")
+        .replace("_", LIKE_ESCAPE + "_")
+    )
+    return f"%{escaped}%"
 
 
 @router.get("/search")
@@ -33,7 +45,7 @@ def search(
     assets: list[Asset] = []
 
     if q:
-        like = f"%{q}%"
+        like = _like_pattern(q)
         entries = list(
             db.scalars(
                 select(MaintenanceEntry)
@@ -45,11 +57,11 @@ def search(
                 .outerjoin(Asset, MaintenanceEntry.asset_id == Asset.id)
                 .where(
                     or_(
-                        MaintenanceEntry.description.ilike(like),
-                        MaintenanceEntry.notes.ilike(like),
-                        MaintenanceEntry.comment.ilike(like),
-                        Activity.name.ilike(like),
-                        Asset.name.ilike(like),
+                        MaintenanceEntry.description.ilike(like, escape=LIKE_ESCAPE),
+                        MaintenanceEntry.notes.ilike(like, escape=LIKE_ESCAPE),
+                        MaintenanceEntry.comment.ilike(like, escape=LIKE_ESCAPE),
+                        Activity.name.ilike(like, escape=LIKE_ESCAPE),
+                        Asset.name.ilike(like, escape=LIKE_ESCAPE),
                     )
                 )
                 .order_by(MaintenanceEntry.occurred_at.desc())
@@ -59,7 +71,7 @@ def search(
         measurements = list(
             db.scalars(
                 select(Measurement)
-                .where(Measurement.parameter.ilike(like))
+                .where(Measurement.parameter.ilike(like, escape=LIKE_ESCAPE))
                 .order_by(Measurement.measured_at.desc())
                 .limit(LIMIT)
             ).all()
@@ -70,10 +82,10 @@ def search(
                 .where(Asset.type.in_(OBJECT_TYPES))
                 .where(
                     or_(
-                        Asset.name.ilike(like),
-                        Asset.uid.ilike(like),
-                        Asset.address.ilike(like),
-                        Asset.comment.ilike(like),
+                        Asset.name.ilike(like, escape=LIKE_ESCAPE),
+                        Asset.uid.ilike(like, escape=LIKE_ESCAPE),
+                        Asset.address.ilike(like, escape=LIKE_ESCAPE),
+                        Asset.comment.ilike(like, escape=LIKE_ESCAPE),
                     )
                 )
                 .order_by(Asset.name.asc())

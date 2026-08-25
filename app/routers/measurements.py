@@ -18,7 +18,7 @@ from app.models.user import User
 from app.services.charts import line_chart_svg
 from app.services.i18n import LANGUAGE_COOKIE, get_translator, normalize_lang
 from app.services.measurements import parameter_config_map
-from app.services.security import get_current_user, verify_csrf
+from app.services.security import get_current_user, require_admin, verify_csrf
 from app.services.templating import flash, render
 
 router = APIRouter(prefix="/measurements")
@@ -45,6 +45,29 @@ def _parse_float(value: str | None) -> float | None:
         return float(value.replace(",", "."))
     except ValueError:
         return None
+
+
+def _parse_threshold(value: str | None) -> tuple[float | None, bool]:
+    """Parse an optional threshold. Returns (value, ok); junk is not "unset"."""
+    if value is None or value.strip() == "":
+        return None, True
+    try:
+        return float(value.strip().replace(",", ".")), True
+    except ValueError:
+        return None, False
+
+
+def _format_threshold(value: float | None) -> str:
+    return "" if value is None else f"{value:g}"
+
+
+def _parse_count(value: str | None, limit: int) -> int:
+    """Clamp the submitted row count -- it decides how often we walk the form."""
+    try:
+        count = int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, min(count, limit))
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -74,6 +97,14 @@ def _parameters(db: Session) -> list[str]:
             .order_by(func.max(Measurement.measured_at).desc())
         ).all()
     )
+
+
+def _config_names(db: Session, cfgs: dict[str, MeasurementParameter]) -> list[str]:
+    """Parameters in use plus configured ones whose measurements are all gone,
+    so an orphaned threshold stays visible and editable."""
+    names = _parameters(db)
+    in_use = set(names)
+    return names + sorted(n for n in cfgs if n not in in_use)
 
 
 def _data_years(db: Session) -> list[int]:
@@ -229,11 +260,19 @@ def measurement_charts(
 def parameters_config(
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
-    names = _parameters(db)
     cfgs = parameter_config_map(db)
-    rows = [{"name": n, "cfg": cfgs.get(n)} for n in names]
+    rows = [
+        {
+            "name": name,
+            "unit": (cfgs[name].unit or "") if name in cfgs else "",
+            "min": _format_threshold(cfgs[name].min_value) if name in cfgs else "",
+            "max": _format_threshold(cfgs[name].max_value) if name in cfgs else "",
+            "error": None,
+        }
+        for name in _config_names(db, cfgs)
+    ]
     return render(
         request,
         "measurements/parameters.html",
@@ -247,19 +286,46 @@ def parameters_config(
 async def save_parameters(
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     form = await request.form()
     verify_csrf(request, form.get("csrf_token", ""))
     cfgs = parameter_config_map(db)
-    count = int(form.get("count") or 0)
+    count = _parse_count(form.get("count"), len(_config_names(db, cfgs)))
+
+    rows: list[dict] = []
+    pending: list[tuple[str, str, float | None, float | None]] = []
     for i in range(count):
         name = (form.get(f"name_{i}") or "").strip()
         if not name:
             continue
         unit = (form.get(f"unit_{i}") or "").strip()
-        lo = _parse_float(form.get(f"min_{i}"))
-        hi = _parse_float(form.get(f"max_{i}"))
+        raw_lo = (form.get(f"min_{i}") or "").strip()
+        raw_hi = (form.get(f"max_{i}") or "").strip()
+        lo, lo_ok = _parse_threshold(raw_lo)
+        hi, hi_ok = _parse_threshold(raw_hi)
+        error = None
+        if not lo_ok or not hi_ok:
+            error = "measure.threshold_invalid"
+        elif lo is not None and hi is not None and lo > hi:
+            error = "measure.threshold_order"
+        rows.append(
+            {"name": name, "unit": unit, "min": raw_lo, "max": raw_hi, "error": error}
+        )
+        pending.append((name, unit, lo, hi))
+
+    # A typo must not silently wipe a saved threshold: re-render with the input.
+    if any(row["error"] for row in rows):
+        return render(
+            request,
+            "measurements/parameters.html",
+            {"rows": rows, "form_error": "measure.threshold_error"},
+            db=db,
+            user=user,
+            status_code=400,
+        )
+
+    for name, unit, lo, hi in pending:
         cfg = cfgs.get(name)
         if not unit and lo is None and hi is None:
             if cfg:

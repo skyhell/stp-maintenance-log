@@ -43,6 +43,7 @@
                aria-label="{{ t('search.title') }}"
                value="{% if request.url.path == '/search' %}{{ request.query_params.get('q', '') }}{% endif %}">
       </form>
+      <a href="/search" class="icon-btn nav-search-link" title="{{ t('search.title') }}" aria-label="{{ t('search.title') }}">🔍</a>
       <div class="lang-switch">
         {% for l in supported_languages %}
         <a href="/lang/{{ l }}" class="{% if l == lang %}active{% endif %}">{{ l|upper }}</a>

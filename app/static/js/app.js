@@ -222,7 +222,13 @@
       });
     }
 
+    // Only one modal at a time, or dismissing the top one would unlock page
+    // scrolling while the one below is still open.
+    let activeBackdrop = null;
+
     function open(card) {
+      if (activeBackdrop) return;
+      const previousFocus = document.activeElement;
       const backdrop = document.createElement("div");
       backdrop.className = "chart-modal-backdrop";
 
@@ -252,17 +258,27 @@
       backdrop.appendChild(modal);
       document.body.appendChild(backdrop);
       document.body.style.overflow = "hidden";
+      activeBackdrop = backdrop;
+      closeBtn.focus();
 
       const svg = inner.querySelector("svg");
       if (svg) enableReadout(svg);
 
       function dismiss() {
+        if (activeBackdrop !== backdrop) return;
+        activeBackdrop = null;
         backdrop.remove();
         document.body.style.overflow = "";
         document.removeEventListener("keydown", onKey);
+        if (previousFocus && previousFocus.focus) previousFocus.focus();
       }
       function onKey(e) {
         if (e.key === "Escape") dismiss();
+        // The close button is the only focusable element inside: keep Tab there.
+        if (e.key === "Tab") {
+          e.preventDefault();
+          closeBtn.focus();
+        }
       }
       backdrop.addEventListener("click", function (e) {
         if (e.target === backdrop) dismiss();

@@ -6,7 +6,9 @@
   <h1>{{ t('measure.title') }}</h1>
   <div class="flex flex-wrap">
     <a href="/measurements/charts" class="btn btn-secondary">📈 {{ t('measure.charts') }}</a>
+    {% if current_user.is_admin %}
     <a href="/measurements/parameters" class="btn btn-secondary">⚙ {{ t('measure.thresholds') }}</a>
+    {% endif %}
     <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
   </div>
 </div>
