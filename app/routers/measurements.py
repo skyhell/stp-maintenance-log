@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -25,6 +26,7 @@ router = APIRouter(prefix="/measurements")
 
 PER_PAGE = 25
 MAX_CHARTS = 6
+MAX_PARAM_ROWS = 500
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -48,26 +50,48 @@ def _parse_float(value: str | None) -> float | None:
 
 
 def _parse_threshold(value: str | None) -> tuple[float | None, bool]:
-    """Parse an optional threshold. Returns (value, ok); junk is not "unset"."""
+    """Parse an optional threshold. Returns (value, ok); junk is not "unset".
+
+    ``inf``/``nan`` parse as floats but would disable the breach check and blow
+    up the chart y-axis, so they count as junk.
+    """
     if value is None or value.strip() == "":
         return None, True
     try:
-        return float(value.strip().replace(",", ".")), True
+        parsed = float(value.strip().replace(",", "."))
     except ValueError:
         return None, False
+    if not math.isfinite(parsed):
+        return None, False
+    return parsed, True
 
 
 def _format_threshold(value: float | None) -> str:
-    return "" if value is None else f"{value:g}"
+    """Round-trippable, so re-saving the form cannot round the stored value."""
+    if value is None:
+        return ""
+    text = repr(float(value))
+    return text[:-2] if text.endswith(".0") else text
 
 
-def _parse_count(value: str | None, limit: int) -> int:
-    """Clamp the submitted row count -- it decides how often we walk the form."""
-    try:
-        count = int(value or 0)
-    except (TypeError, ValueError):
-        return 0
-    return max(0, min(count, limit))
+def _row_indices(form) -> list[int]:
+    """Row indices actually present in the form.
+
+    The submitted ``count`` is only a hint: if it lags behind the rendered rows
+    (a parameter list that changed underneath the admin), trusting it would drop
+    edited rows without a word. The cap keeps a crafted form bounded.
+    """
+    found: set[int] = set()
+    for key in form.keys():
+        if not key.startswith("name_"):
+            continue
+        try:
+            index = int(key[len("name_") :])
+        except ValueError:
+            continue
+        if index >= 0:
+            found.add(index)
+    return sorted(found)[:MAX_PARAM_ROWS]
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -291,11 +315,10 @@ async def save_parameters(
     form = await request.form()
     verify_csrf(request, form.get("csrf_token", ""))
     cfgs = parameter_config_map(db)
-    count = _parse_count(form.get("count"), len(_config_names(db, cfgs)))
 
     rows: list[dict] = []
     pending: list[tuple[str, str, float | None, float | None]] = []
-    for i in range(count):
+    for i in _row_indices(form):
         name = (form.get(f"name_{i}") or "").strip()
         if not name:
             continue
@@ -338,7 +361,8 @@ async def save_parameters(
         cfg.min_value = lo
         cfg.max_value = hi
     db.commit()
-    flash(request, "measure.thresholds_saved")
+    if pending:
+        flash(request, "measure.thresholds_saved")
     return RedirectResponse("/measurements/parameters", status_code=303)
 
 

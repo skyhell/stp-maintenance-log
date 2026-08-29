@@ -1112,6 +1112,81 @@ def test_threshold_input_is_validated():
         assert "mg/l" not in client.get("/measurements?parameter=THRESH").text
 
 
+def test_threshold_rejects_non_finite_and_keeps_precision():
+    with _client() as client:
+        _login(client)
+        _seed_measurement(client, parameter="FINITE")
+
+        # inf/nan parse as floats but would disable the breach check and turn
+        # the chart y-axis into NaN, so they are refused like any other typo.
+        for junk in ("inf", "-inf", "nan", "1e400"):
+            r = _save_thresholds(
+                client, count="1", name_0="FINITE", min_0="0", max_0=junk
+            )
+            assert r.status_code == 400, junk
+
+        # A precise threshold survives the round trip through the form; the old
+        # %g formatting rounded it to 1.23457e+06 on the next save.
+        assert (
+            _save_thresholds(
+                client, count="1", name_0="FINITE", min_0="0.123456789",
+                max_0="1234567.8",
+            ).status_code
+            == 303
+        )
+        page = client.get("/measurements/parameters").text
+        assert 'value="1234567.8"' in page
+        assert 'value="0.123456789"' in page
+
+
+def test_threshold_rows_beyond_the_count_hint_are_kept():
+    with _client() as client:
+        _login(client)
+        _seed_measurement(client, parameter="ROWA")
+        _seed_measurement(client, parameter="ROWB")
+
+        # A stale count (the parameter list changed under the open form) must
+        # not silently drop the rows the admin actually edited.
+        r = _save_thresholds(
+            client,
+            count="1",
+            name_0="ROWA",
+            unit_0="mg/l",
+            name_1="ROWB",
+            unit_1="ug/l",
+            max_1="4",
+        )
+        assert r.status_code == 303
+        page = client.get("/measurements/parameters").text
+        assert "ug/l" in page
+        assert 'value="4"' in page
+
+
+def test_chart_keeps_its_scale_when_thresholds_are_far_out():
+    from datetime import UTC, datetime
+
+    from app.services.charts import line_chart_svg
+
+    points = [
+        (datetime(2024, 1, d, tzinfo=UTC), v)
+        for d, v in ((1, 6.9), (2, 7.05), (3, 7.2))
+    ]
+    svg = line_chart_svg(points, "pH", unit="", lo=0.0, hi=14.0)
+
+    # A pH band of 0..14 must not flatten readings of 6.9..7.2: the domain stays
+    # with the data and the off-scale thresholds are only labelled at the edges.
+    assert "nan" not in svg
+    assert "stroke-dasharray" not in svg
+    assert "↑ max 14" in svg
+    assert "↓ min 0" in svg
+    # y tick labels stay in the data's neighbourhood.
+    assert ">7" in svg and ">14<" not in svg
+
+    # A band that sits near the data is still drawn as a reference line.
+    svg = line_chart_svg(points, "pH", unit="", lo=6.8, hi=7.3)
+    assert "stroke-dasharray" in svg
+
+
 def test_threshold_config_is_admin_only():
     with _client() as client:
         _login(client)

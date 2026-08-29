@@ -24,6 +24,8 @@ no external CDN, no API keys.
 - **Trend charts** — a dedicated charts page draws a per-parameter line chart
   (with unit and dashed threshold lines). Click a chart to **enlarge** it, then
   click inside to read off the nearest point's **x/y values** via a crosshair.
+  A wide threshold band (say pH 0–14) no longer flattens the curve: thresholds
+  far outside the readings keep off the scale and are labelled at the edge.
 - **Global search** — one header search box (a search icon on phones) across
   maintenance entries, measurements and objects.
 - **Self-building activity list** — new activities are stored automatically the
@@ -264,7 +266,9 @@ und Anschlüsse — ausgelegt für den Betrieb in einem **Proxmox-LXC-Container*
 **Messwerte** (z. B. NH4) mit Temperatur und Zählerstand, je Messgröße
 optionaler **Einheit** und **Grenzwert** (von Administratoren gepflegt,
 Über-/Unterschreitung wird rot markiert), samt eigener **Diagramm-Seite** mit
-Verlaufskurven, Grenzwertlinien, Klick-zum-Vergrößern und Achsen-Ablesung ·
+Verlaufskurven, Grenzwertlinien (weit außerhalb liegende Grenzwerte stauchen
+die Kurve nicht, sondern werden am Rand beschriftet), Klick-zum-Vergrößern und
+Achsen-Ablesung ·
 **globale Suche** über Einträge, Messwerte und Objekte (am Handy über das
 Lupen-Symbol) ·
 selbstlernende Tätigkeiten- und Messungs-Dropdowns · paginierte Listen mit

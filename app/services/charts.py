@@ -40,12 +40,21 @@ def line_chart_svg(
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]
 
-    # Include thresholds in the y-domain so their reference lines are visible.
-    domain = list(ys)
-    for ref in (lo, hi):
-        if ref is not None:
-            domain.append(ref)
-    y_min, y_max = min(domain), max(domain)
+    # Thresholds join the y-domain so their reference lines are visible -- but
+    # only while they stay near the data. A wide band (pH 0..14 over readings of
+    # 6.9..7.2) would otherwise squash the series into a flat line, so a far-out
+    # threshold is left off the scale and marked at the edge instead.
+    y_min, y_max = min(ys), max(ys)
+    slack = (y_max - y_min) or max(abs(y_min), 1.0)
+    refs: list[tuple[float, str, bool]] = []
+    for ref, name in ((lo, "min"), (hi, "max")):
+        if ref is None:
+            continue
+        on_scale = y_min - slack <= ref <= y_max + slack
+        refs.append((ref, name, on_scale))
+    for ref, _name, on_scale in refs:
+        if on_scale:
+            y_min, y_max = min(y_min, ref), max(y_max, ref)
     if y_min == y_max:  # flat series: give the line room
         y_min -= 1.0
         y_max += 1.0
@@ -93,9 +102,16 @@ def line_chart_svg(
             f'fill="var(--text-muted)" font-size="10">{_esc(unit)}</text>'
         )
 
-    # Dashed warning-threshold reference lines.
-    for ref, name in ((lo, "min"), (hi, "max")):
-        if ref is None:
+    # Dashed warning-threshold reference lines; off-scale ones only get a label
+    # at the edge they lie beyond, so the band is still announced.
+    for ref, name, on_scale in refs:
+        if not on_scale:
+            arrow, y = ("↑", _M_TOP + 9) if ref > y_max else ("↓", _H - _M_BOTTOM - 4)
+            parts.append(
+                f'<text x="{_W - _M_RIGHT}" y="{y:.1f}" text-anchor="end" '
+                f'fill="var(--danger)" font-size="9" opacity="0.7">'
+                f"{arrow} {name} {_fmt_num(ref)}</text>"
+            )
             continue
         y = sy(ref)
         parts.append(
