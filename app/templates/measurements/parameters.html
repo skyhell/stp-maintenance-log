@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
 {% block title %}{{ t('measure.thresholds') }} · {{ t('app.short') }}{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -21,9 +22,9 @@
       <thead>
         <tr>
           <th>{{ t('measure.parameter') }}</th>
-          <th>{{ t('measure.unit') }}</th>
-          <th>{{ t('measure.min') }}</th>
-          <th>{{ t('measure.max') }}</th>
+          <th>{{ t('measure.unit') }}{{ m.tip('tip.measure.unit', t) }}</th>
+          <th>{{ t('measure.min') }}{{ m.tip('tip.measure.min', t) }}</th>
+          <th>{{ t('measure.max') }}{{ m.tip('tip.measure.max', t) }}</th>
         </tr>
       </thead>
       <tbody>
@@ -43,8 +44,8 @@
     </table>
   </div>
   <div class="flex flex-wrap" style="margin-top:12px;">
-    <button class="btn" type="submit">{{ t('common.save') }}</button>
-    <a href="/measurements" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+    <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
+    <a href="/measurements" class="btn btn-secondary" data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</a>
   </div>
   {% else %}
   <div class="empty"><span class="emoji">🧪</span>{{ t('measure.no_data') }}</div>

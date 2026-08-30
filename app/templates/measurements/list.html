@@ -5,18 +5,18 @@
 <div class="page-head">
   <h1>{{ t('measure.title') }}</h1>
   <div class="flex flex-wrap">
-    <a href="/measurements/charts" class="btn btn-secondary">📈 {{ t('measure.charts') }}</a>
+    <a href="/measurements/charts" class="btn btn-secondary" data-tip="{{ t('tip.action.charts') }}">📈 {{ t('measure.charts') }}</a>
     {% if current_user.is_admin %}
-    <a href="/measurements/parameters" class="btn btn-secondary">⚙ {{ t('measure.thresholds') }}</a>
+    <a href="/measurements/parameters" class="btn btn-secondary" data-tip="{{ t('tip.action.thresholds') }}">⚙ {{ t('measure.thresholds') }}</a>
     {% endif %}
-    <a href="/measurements/new" class="btn">＋ {{ t('measure.new') }}</a>
+    <a href="/measurements/new" class="btn" data-tip="{{ t('tip.action.new_measurement') }}">＋ {{ t('measure.new') }}</a>
   </div>
 </div>
 
 <form method="get" action="/measurements" class="card" style="margin-bottom:16px;">
   <div class="field-row">
     <div class="field">
-      <label>{{ t('measure.parameter') }}</label>
+      <label>{{ t('measure.parameter') }}{{ m.tip('tip.filter.parameter', t) }}</label>
       <select name="parameter">
         <option value="">{{ t('common.all') }}</option>
         {% for p in parameters %}
@@ -25,7 +25,7 @@
       </select>
     </div>
     <div class="field">
-      <label>{{ t('report.quick') }}</label>
+      <label>{{ t('report.quick') }}{{ m.tip('tip.filter.year', t) }}</label>
       <select name="year">
         <option value="">{{ t('common.all') }}</option>
         {% for y in years %}
@@ -34,19 +34,19 @@
       </select>
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_from') }}</label>
+      <label>{{ t('entry.filter_from') }}{{ m.tip('tip.filter.from', t) }}</label>
       <input type="date" name="date_from" value="{{ filters.date_from }}">
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_to') }}</label>
+      <label>{{ t('entry.filter_to') }}{{ m.tip('tip.filter.to', t) }}</label>
       <input type="date" name="date_to" value="{{ filters.date_to }}">
     </div>
   </div>
   <div class="flex flex-wrap">
-    <button class="btn btn-sm" type="submit">{{ t('common.filter') }}</button>
-    <a href="/measurements" class="btn btn-secondary btn-sm">{{ t('common.reset') }}</a>
+    <button class="btn btn-sm" type="submit" data-tip="{{ t('tip.action.filter') }}">{{ t('common.filter') }}</button>
+    <a href="/measurements" class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.reset') }}">{{ t('common.reset') }}</a>
     <span class="spacer"></span>
-    <a class="btn btn-secondary btn-sm"
+    <a class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.csv') }}"
        href="/measurements/export.csv?parameter={{ filters.parameter|urlencode }}&year={{ filters.year }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}">
       ⬇ CSV
     </a>
@@ -81,11 +81,12 @@
         <td>{{ m.operating_hours if m.operating_hours is not none else '—' }}</td>
         <td>{{ m.user.username if m.user else '—' }}</td>
         <td style="text-align:right; white-space:nowrap;">
-          <a href="/measurements/{{ m.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+          <a href="/measurements/{{ m.id }}/edit" class="btn-ghost btn btn-sm" data-tip="{{ t('tip.action.edit') }}">{{ t('common.edit') }}</a>
           <form method="post" action="/measurements/{{ m.id }}/delete" class="inline-form"
                 onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit"
+                    data-tip="{{ t('tip.action.delete') }}">{{ t('common.delete') }}</button>
           </form>
         </td>
       </tr>

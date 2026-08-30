@@ -1,5 +1,9 @@
 {# Reusable UI macros #}
 
+{# Small "i" marker that reveals a localized tooltip on hover/focus/tap.
+   `t` must be passed in: it lives in the render context, not the Jinja env. #}
+{% macro tip(key, t) %}<button type="button" class="tip" data-tip="{{ t(key) }}" aria-label="{{ t(key) }}">i</button>{% endmacro %}
+
 {% macro asset_type_badge(asset, t) %}
   {% set cls = {'plant':'badge-plant','shaft':'badge-shaft','connection':'badge-connection'} %}
   <span class="badge {{ cls.get(asset.type.value, 'badge-neutral') }}">
@@ -21,7 +25,8 @@
           data-listening="{{ t('speech.listening') }}"
           data-unsupported="{{ t('speech.unsupported') }}"
           onclick="startSpeech('{{ target_id }}', this, '{{ 'de-DE' if lang == 'de' else 'en-US' }}')"
-          title="{{ t('speech.start') }}">🎤</button>
+          data-tip="{{ t('tip.action.speech') }}"
+          aria-label="{{ t('speech.start') }}">🎤</button>
 {% endmacro %}
 
 {# Build a "?k=v&..." query string from the active filters, dropping empties
@@ -41,13 +46,15 @@
   {% if pages > 1 %}
   <div class="pagination">
     {% if page > 1 %}
-    <a class="btn btn-secondary btn-sm" href="{{ base_url }}{{ query_string(filters, page - 1) }}">← {{ t('common.prev') }}</a>
+    <a class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.prev_page') }}"
+       href="{{ base_url }}{{ query_string(filters, page - 1) }}">← {{ t('common.prev') }}</a>
     {% else %}
     <span class="btn btn-secondary btn-sm" style="opacity:.4; pointer-events:none;">← {{ t('common.prev') }}</span>
     {% endif %}
     <span class="text-sm muted">{{ t('common.page_of', page=page, pages=pages) }}</span>
     {% if page < pages %}
-    <a class="btn btn-secondary btn-sm" href="{{ base_url }}{{ query_string(filters, page + 1) }}">{{ t('common.next') }} →</a>
+    <a class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.next_page') }}"
+       href="{{ base_url }}{{ query_string(filters, page + 1) }}">{{ t('common.next') }} →</a>
     {% else %}
     <span class="btn btn-secondary btn-sm" style="opacity:.4; pointer-events:none;">{{ t('common.next') }} →</span>
     {% endif %}

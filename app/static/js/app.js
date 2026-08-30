@@ -336,4 +336,85 @@
       });
     });
   });
+
+  // ---------- Tooltips ----------
+  // One floating bubble reused by every [data-tip] element. A CSS ::after on
+  // the trigger would be clipped by .table-wrap / .nav-links (overflow: auto)
+  // and sit below the sticky nav, so position it against the viewport instead.
+  // The text itself is server-rendered into data-tip and therefore already in
+  // the user's language -- no translation catalog is needed here.
+  document.addEventListener("DOMContentLoaded", function () {
+    const GAP = 8;
+    const bubble = document.createElement("div");
+    bubble.className = "tooltip";
+    bubble.setAttribute("role", "tooltip");
+    bubble.setAttribute("aria-hidden", "true");
+    document.body.appendChild(bubble);
+
+    let current = null;
+
+    function place(el) {
+      const r = el.getBoundingClientRect();
+      const b = bubble.getBoundingClientRect();
+      // Prefer above the trigger; flip below when there is no room.
+      let top = r.top - b.height - GAP;
+      if (top < GAP) top = r.bottom + GAP;
+      let left = r.left + r.width / 2 - b.width / 2;
+      const max = document.documentElement.clientWidth - b.width - GAP;
+      if (left > max) left = max;
+      if (left < GAP) left = GAP;
+      // left/top, not transform: the transform is the CSS fade-in animation.
+      bubble.style.left = Math.round(left) + "px";
+      bubble.style.top = Math.round(top) + "px";
+    }
+
+    function show(el) {
+      const text = el.getAttribute("data-tip");
+      if (!text) return;
+      current = el;
+      bubble.textContent = text;
+      bubble.setAttribute("aria-hidden", "false");
+      place(el); // reads the laid-out size, so position before revealing
+      bubble.classList.add("visible");
+    }
+
+    function hide() {
+      if (!current) return;
+      current = null;
+      bubble.classList.remove("visible");
+      bubble.setAttribute("aria-hidden", "true");
+    }
+
+    function trigger(e) {
+      return e.target && e.target.closest ? e.target.closest("[data-tip]") : null;
+    }
+
+    document.addEventListener("mouseover", function (e) {
+      const el = trigger(e);
+      if (el && el !== current) show(el);
+    });
+    document.addEventListener("mouseout", function (e) {
+      // Moving onto a child of the trigger still fires mouseout; only hide
+      // once the pointer has actually left the trigger itself.
+      if (!current) return;
+      if (e.relatedTarget && current.contains(e.relatedTarget)) return;
+      if (trigger(e) === current) hide();
+    });
+    document.addEventListener("focusin", function (e) {
+      const el = trigger(e);
+      if (el) show(el);
+    });
+    document.addEventListener("focusout", function (e) {
+      if (trigger(e) === current) hide();
+    });
+    // A tap focuses the trigger; tapping anywhere else dismisses the bubble.
+    document.addEventListener("click", function (e) {
+      if (!trigger(e)) hide();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") hide();
+    });
+    document.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+  });
 })();

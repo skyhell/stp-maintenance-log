@@ -439,3 +439,37 @@ tbody tr:hover { background: var(--bg-elev-2); }
   h1 { font-size: 1.5rem; }
   .container { padding: 18px 14px 80px; }
 }
+
+/* ---------- Tooltips ---------- */
+/* Texts are rendered server-side into data-tip, so they follow the language
+   cookie like every other string. app.js positions a single floating bubble
+   because .table-wrap / .nav-links scroll containers would clip a ::after. */
+.tip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; margin-left: 5px; padding: 0;
+  vertical-align: middle; flex: none;
+  border: 1px solid var(--border-strong); border-radius: 50%;
+  background: none; color: var(--text-muted);
+  font-family: var(--font); font-size: 0.62rem; font-style: italic;
+  font-weight: 600; line-height: 1; cursor: help;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.tip:hover, .tip:focus-visible { color: var(--accent); border-color: var(--accent); }
+.tip:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.tooltip {
+  position: fixed; top: 0; left: 0; z-index: 1100;
+  max-width: 260px; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-elev); color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 0.78rem; line-height: 1.35; text-align: left;
+  white-space: normal; pointer-events: none;
+  opacity: 0; transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.tooltip.visible { opacity: 1; transform: translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tip, .tooltip { transition: none; }
+}

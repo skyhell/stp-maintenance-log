@@ -43,15 +43,15 @@
                aria-label="{{ t('search.title') }}"
                value="{% if request.url.path == '/search' %}{{ request.query_params.get('q', '') }}{% endif %}">
       </form>
-      <a href="/search" class="icon-btn nav-search-link" title="{{ t('search.title') }}" aria-label="{{ t('search.title') }}">🔍</a>
+      <a href="/search" class="icon-btn nav-search-link" data-tip="{{ t('tip.action.search') }}" aria-label="{{ t('search.title') }}">🔍</a>
       <div class="lang-switch">
         {% for l in supported_languages %}
         <a href="/lang/{{ l }}" class="{% if l == lang %}active{% endif %}">{{ l|upper }}</a>
         {% endfor %}
       </div>
-      <button class="icon-btn" onclick="toggleTheme()" title="{{ t('theme.toggle') }}" aria-label="{{ t('theme.toggle') }}">◐</button>
-      <a href="/account" class="icon-btn" title="{{ t('nav.account') }}" aria-label="{{ t('nav.account') }}">⚙</a>
-      <a href="/logout" class="icon-btn" title="{{ t('nav.logout') }}" aria-label="{{ t('nav.logout') }}">⏻</a>
+      <button class="icon-btn" onclick="toggleTheme()" data-tip="{{ t('tip.action.theme') }}" aria-label="{{ t('theme.toggle') }}">◐</button>
+      <a href="/account" class="icon-btn" data-tip="{{ t('tip.action.account') }}" aria-label="{{ t('nav.account') }}">⚙</a>
+      <a href="/logout" class="icon-btn" data-tip="{{ t('tip.action.logout') }}" aria-label="{{ t('nav.logout') }}">⏻</a>
     </div>
   </nav>
   {% endif %}

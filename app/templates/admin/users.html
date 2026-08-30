@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
 {% block title %}{{ t('admin.title') }} · {{ t('app.short') }}{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -8,39 +9,41 @@
 <div class="card" style="margin-bottom:16px;" x-data="{ open: false }">
   <div class="flex" style="justify-content:space-between;">
     <h2 class="mb-0">{{ t('admin.new_user') }}</h2>
-    <button class="btn btn-sm" @click="open = !open" type="button">＋ {{ t('admin.new_user') }}</button>
+    <button class="btn btn-sm" @click="open = !open" type="button"
+            data-tip="{{ t('tip.action.new_user') }}">＋ {{ t('admin.new_user') }}</button>
   </div>
   <form method="post" action="/admin/users/new" x-show="open" x-cloak style="margin-top:16px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="field-row">
       <div class="field">
-        <label>{{ t('login.username') }}</label>
+        <label>{{ t('login.username') }}{{ m.tip('tip.admin.username', t) }}</label>
         <input name="username" required>
       </div>
       <div class="field">
-        <label>Email <span class="muted">({{ t('common.optional') }})</span></label>
+        <label>Email <span class="muted">({{ t('common.optional') }})</span>{{ m.tip('tip.admin.email', t) }}</label>
         <input name="email" type="email">
       </div>
     </div>
     <div class="field-row">
       <div class="field">
-        <label>{{ t('login.password') }}</label>
+        <label>{{ t('login.password') }}{{ m.tip('tip.admin.password', t) }}</label>
         <input name="password" type="password" minlength="8" required autocomplete="new-password">
       </div>
       <div class="field">
-        <label>{{ t('account.confirm_password') }}</label>
+        <label>{{ t('account.confirm_password') }}{{ m.tip('tip.admin.password_confirm', t) }}</label>
         <input name="password_confirm" type="password" minlength="8" required autocomplete="new-password">
       </div>
     </div>
     <div class="field">
-      <label>{{ t('admin.role') }}</label>
+      <label>{{ t('admin.role') }}{{ m.tip('tip.admin.role', t) }}</label>
       <select name="role">
         {% for r in roles %}<option value="{{ r.value }}">{{ t('admin.role.' + r.value) }}</option>{% endfor %}
       </select>
     </div>
     <div class="flex" style="margin-top:8px;">
-      <button class="btn" type="submit">{{ t('common.create') }}</button>
-      <button class="btn btn-secondary" type="button" @click="open = false">{{ t('common.cancel') }}</button>
+      <button class="btn" type="submit" data-tip="{{ t('tip.action.new_user') }}">{{ t('common.create') }}</button>
+      <button class="btn btn-secondary" type="button" @click="open = false"
+              data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</button>
     </div>
   </form>
 </div>
@@ -69,13 +72,14 @@
         <td>{% if u.totp_enabled %}🔒{% else %}—{% endif %}</td>
         <td class="muted text-sm">{{ u.created_at|dmy }}</td>
         <td style="text-align:right;">
-          <button class="btn-ghost btn btn-sm" type="button"
+          <button class="btn-ghost btn btn-sm" type="button" data-tip="{{ t('tip.action.edit') }}"
                   @click="editId = (editId === {{ u.id }} ? null : {{ u.id }})">{{ t('common.edit') }}</button>
           {% if u.id != current_user.id %}
           <form method="post" action="/admin/users/{{ u.id }}/delete" class="inline-form"
                 onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit"
+                    data-tip="{{ t('tip.action.delete') }}">{{ t('common.delete') }}</button>
           </form>
           {% endif %}
         </td>
@@ -90,7 +94,7 @@
                 <input name="email" type="email" value="{{ u.email or '' }}">
               </div>
               <div class="field">
-                <label>{{ t('admin.role') }}</label>
+                <label>{{ t('admin.role') }}{{ m.tip('tip.admin.role', t) }}</label>
                 <select name="role">
                   {% for r in roles %}<option value="{{ r.value }}" {% if u.role == r %}selected{% endif %}>{{ t('admin.role.' + r.value) }}</option>{% endfor %}
                 </select>
@@ -98,20 +102,21 @@
             </div>
             <div class="field-row">
               <div class="field">
-                <label>{{ t('account.new_password') }} <span class="muted">({{ t('common.optional') }})</span></label>
+                <label>{{ t('account.new_password') }} <span class="muted">({{ t('common.optional') }})</span>{{ m.tip('tip.admin.new_password', t) }}</label>
                 <input name="new_password" type="password" minlength="8" autocomplete="new-password">
               </div>
               <div class="field">
-                <label>{{ t('account.confirm_password') }}</label>
+                <label>{{ t('account.confirm_password') }}{{ m.tip('tip.admin.password_confirm', t) }}</label>
                 <input name="new_password_confirm" type="password" minlength="8" autocomplete="new-password">
               </div>
             </div>
             <div class="field">
-              <label class="flex" style="gap:8px;"><input type="checkbox" name="is_active" style="width:auto;" {% if u.is_active %}checked{% endif %}> {{ t('admin.active') }}</label>
+              <label class="flex" style="gap:8px;"><input type="checkbox" name="is_active" style="width:auto;" {% if u.is_active %}checked{% endif %}> {{ t('admin.active') }}{{ m.tip('tip.admin.active', t) }}</label>
             </div>
             <div class="flex" style="margin-top:8px;">
-              <button class="btn btn-sm" type="submit">{{ t('common.save') }}</button>
-              <button class="btn btn-secondary btn-sm" type="button" @click="editId = null">{{ t('common.cancel') }}</button>
+              <button class="btn btn-sm" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
+              <button class="btn btn-secondary btn-sm" type="button" @click="editId = null"
+                      data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</button>
             </div>
           </form>
         </td>

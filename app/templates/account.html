@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
 {% block title %}{{ t('account.title') }} · {{ t('app.short') }}{% endblock %}
 {% block content %}
 <div class="page-head"><h1>{{ t('account.title') }}</h1></div>
@@ -10,18 +11,18 @@
     <form method="post" action="/account/password">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field">
-        <label for="current_password">{{ t('account.current_password') }}</label>
+        <label for="current_password">{{ t('account.current_password') }}{{ m.tip('tip.account.current_password', t) }}</label>
         <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
       </div>
       <div class="field">
-        <label for="new_password">{{ t('account.new_password') }}</label>
+        <label for="new_password">{{ t('account.new_password') }}{{ m.tip('tip.account.new_password', t) }}</label>
         <input type="password" id="new_password" name="new_password" autocomplete="new-password" minlength="8" required>
       </div>
       <div class="field">
-        <label for="confirm_password">{{ t('account.confirm_password') }}</label>
+        <label for="confirm_password">{{ t('account.confirm_password') }}{{ m.tip('tip.account.confirm_password', t) }}</label>
         <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" minlength="8" required>
       </div>
-      <button class="btn" type="submit">{{ t('common.save') }}</button>
+      <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
     </form>
   </div>
 
@@ -38,13 +39,15 @@
       <div class="flex flex-wrap" style="margin-top:12px;">
         <form method="post" action="/account/2fa/backup-codes" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn btn-secondary btn-sm" type="submit">{{ t('twofa.backup_regen') }}</button>
+          <button class="btn btn-secondary btn-sm" type="submit"
+                  data-tip="{{ t('tip.action.twofa_regen') }}">{{ t('twofa.backup_regen') }}</button>
         </form>
       </div>
       <form method="post" action="/account/2fa/disable" style="margin-top:16px;"
             x-data="{ open:false }">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="button"
+                data-tip="{{ t('tip.action.twofa_disable') }}"
                 @click="open=!open">{{ t('twofa.disable') }}</button>
         <div x-show="open" x-cloak style="margin-top:10px;">
           <div class="field">
@@ -56,7 +59,7 @@
       </form>
     {% else %}
       <p>{{ t('account.2fa_disabled') }}</p>
-      <a href="/account/2fa/setup" class="btn">{{ t('twofa.enable') }}</a>
+      <a href="/account/2fa/setup" class="btn" data-tip="{{ t('tip.action.twofa_enable') }}">{{ t('twofa.enable') }}</a>
     {% endif %}
   </div>
 </div>

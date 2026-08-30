@@ -1309,3 +1309,89 @@ def test_2fa_enable_and_login():
         )
         assert r.status_code == 303
         assert client.get("/").status_code == 200
+
+
+# ---------------------------------------------------------------- i18n / tooltips
+
+
+def _catalog(lang: str) -> dict:
+    import json
+    import pathlib
+
+    path = pathlib.Path(__file__).resolve().parent.parent / "app" / "i18n" / f"{lang}.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_i18n_catalogs_are_parallel():
+    """de.json and en.json are maintained by hand -- keep them key-identical."""
+    de, en = _catalog("de"), _catalog("en")
+    assert set(de) == set(en), {
+        "only_de": sorted(set(de) - set(en)),
+        "only_en": sorted(set(en) - set(de)),
+    }
+    assert not [k for k, v in de.items() if not v.strip()]
+    assert not [k for k, v in en.items() if not v.strip()]
+
+
+def test_every_tip_key_used_in_templates_exists():
+    """A missing key renders as the key itself, so catch typos here instead."""
+    import pathlib
+    import re
+
+    tpl = pathlib.Path(__file__).resolve().parent.parent / "app" / "templates"
+    used = set()
+    for path in tpl.rglob("*.html"):
+        used |= set(re.findall(r"tip\.[a-z0-9_.]+", path.read_text(encoding="utf-8")))
+
+    assert used, "no tooltip keys found in the templates"
+    de, en = _catalog("de"), _catalog("en")
+    assert not (used - de.keys())
+    assert not (used - en.keys())
+    # And nothing defined but forgotten.
+    assert not ({k for k in de if k.startswith("tip.")} - used)
+
+
+def test_tooltips_render_in_the_selected_language():
+    # A dedicated account: the 2FA test above leaves `admin` needing a second
+    # factor, and this test only cares about what a logged-in page renders.
+    from app.database import SessionLocal
+    from app.models.user import User, UserRole
+    from app.services.security import hash_password
+
+    with SessionLocal() as db:
+        if not db.query(User).filter_by(username="tipuser").first():
+            db.add(
+                User(
+                    username="tipuser",
+                    password_hash=hash_password("tippass123"),
+                    role=UserRole.user,
+                )
+            )
+            db.commit()
+
+    with _client() as client:
+        r = _login(client, username="tipuser", password="tippass123")
+        assert r.status_code == 303 and r.headers["location"] == "/"
+
+        page = client.get("/entries/new").text
+        assert 'data-tip="' in page
+        assert _catalog("de")["tip.entry.operating_hours"] in page
+
+        client.cookies.set("lang", "en")
+        page_en = client.get("/entries/new").text
+        assert _catalog("en")["tip.entry.operating_hours"] in page_en
+        assert _catalog("de")["tip.entry.operating_hours"] not in page_en
+
+
+def test_no_element_carries_both_title_and_data_tip():
+    """Both would show two bubbles at once -- data-tip replaced title everywhere."""
+    import pathlib
+    import re
+
+    tpl = pathlib.Path(__file__).resolve().parent.parent / "app" / "templates"
+    offenders = []
+    for path in tpl.rglob("*.html"):
+        for tag in re.findall(r"<[a-zA-Z][^>]*>", path.read_text(encoding="utf-8"), re.S):
+            if "data-tip=" in tag and re.search(r"\stitle=", tag):
+                offenders.append((path.name, tag[:80]))
+    assert not offenders, offenders

@@ -4,13 +4,13 @@
 {% block content %}
 <div class="page-head">
   <h1>{{ t('asset.title') }}</h1>
-  <a href="/assets/new" class="btn">＋ {{ t('asset.new') }}</a>
+  <a href="/assets/new" class="btn" data-tip="{{ t('tip.action.new_asset') }}">＋ {{ t('asset.new') }}</a>
 </div>
 
 <div class="flex flex-wrap" style="margin-bottom:16px;">
   <a href="/assets" class="btn btn-sm {{ 'btn-secondary' if filter_type else '' }}">{{ t('common.all') }}</a>
   {% for ty in asset_types %}
-  <a href="/assets?type={{ ty.value }}"
+  <a href="/assets?type={{ ty.value }}" data-tip="{{ t('tip.action.type_filter') }}"
      class="btn btn-sm {{ '' if filter_type == ty.value else 'btn-secondary' }}">
     {{ t('asset.type.' + ty.value) }}
   </a>
@@ -46,11 +46,12 @@
         </td>
         <td>{{ counts.get(a.id, 0) }}</td>
         <td style="text-align:right; white-space:nowrap;">
-          <a href="/assets/{{ a.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+          <a href="/assets/{{ a.id }}/edit" class="btn-ghost btn btn-sm" data-tip="{{ t('tip.action.edit') }}">{{ t('common.edit') }}</a>
           <form method="post" action="/assets/{{ a.id }}/delete" class="inline-form"
                 onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+            <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit"
+                    data-tip="{{ t('tip.action.delete') }}">{{ t('common.delete') }}</button>
           </form>
         </td>
       </tr>

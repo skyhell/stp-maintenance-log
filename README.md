@@ -60,7 +60,11 @@ no external CDN, no API keys.
   summary, generation timestamp), a selectable time range and **image
   thumbnails** for entries. Admin-only.
 - **Backup & restore** — full ZIP backup (database + images), one-click restore.
-- **Internationalisation** — full German 🇩🇪 and English 🇬🇧, switchable in the UI.
+- **Internationalisation** — full German 🇩🇪 and English 🇬🇧, switchable in the UI,
+  including every tooltip.
+- **Contextual tooltips** — an ⓘ marker next to the form fields that need
+  explaining, plus a tooltip on every action button and icon. They appear on
+  hover, on keyboard focus and on tap, and follow the selected language.
 - **Apple-style UI** — clean, minimal, rounded, with a persistent **dark mode**
   and a fully responsive layout (desktop, tablet, phone).
 
@@ -280,8 +284,9 @@ Handy · Login mit Rollen und **Rate-Limiting** · **2FA (TOTP)** mit QR-Code un
 Backup-Codes · Benutzerverwaltung mit Passwort-Bestätigung · **Anlagenbericht
 (PDF)** mit Übersichtsseite, wählbarem Zeitbereich, Bild-Thumbnails und
 chronologischer Übersicht über Wartungen, Messwerte und Objektänderungen ·
-**Backup/Restore** als ZIP · zweisprachig **DE/EN** · **Dark Mode** ·
-responsives Apple-Stil-Design.
+**Backup/Restore** als ZIP · zweisprachig **DE/EN** · **Tooltips** in der
+eingestellten Sprache an Formularfeldern und Aktions-Schaltflächen (Hover,
+Tastatur-Fokus und Tippen) · **Dark Mode** · responsives Apple-Stil-Design.
 
 **Installation auf Proxmox:**
 

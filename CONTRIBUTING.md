@@ -47,10 +47,44 @@ tests/            pytest smoke/integration tests
 - Keep the code style consistent with what is already there (type hints,
   `from __future__ import annotations`, small focused functions).
 - Add or update a translation key in **both** `app/i18n/de.json` and
-  `app/i18n/en.json` whenever you add user-facing text.
+  `app/i18n/en.json` whenever you add user-facing text. The two catalogs must
+  stay key-identical; `pytest` fails if they drift apart.
 - Add a test for new routes or services where practical.
 - Never commit secrets. `.env` and `data/` are gitignored.
 - All POST forms must include the CSRF token and be verified server-side.
+
+## Adding a tooltip
+
+Tooltip texts live in the `tip.*` namespace of the two catalogs and are
+rendered server-side, so they follow the selected language automatically.
+
+- **A form field** gets a small "i" marker next to its label:
+
+  ```jinja
+  {% import "macros.html" as m %}
+  <label for="uid">{{ t('asset.uid') }}{{ m.tip('tip.asset.uid', t) }}</label>
+  ```
+
+  Put the marker *inside* the `<label>` - `.field label` is `display: block`,
+  so a sibling would drop onto its own line.
+
+- **A button, link or icon** carries the attribute directly:
+
+  ```jinja
+  <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">...</button>
+  ```
+
+Never put `data-tip` and a native `title` on the same element; the browser
+would show its own bubble on top of ours, and a test guards against it. Where a
+field already has an inline `.hint` below it, skip the tooltip rather than
+repeat the text.
+
+`app/static/js/app.js` positions one shared bubble against the viewport - a CSS
+`::after` on the trigger would be clipped by the `.table-wrap` and `.nav-links`
+scroll containers.
+
+Because `app/services/i18n.py` caches the catalogs with `lru_cache`, **restart
+the server** after editing a JSON file.
 
 ## Adding a new language
 

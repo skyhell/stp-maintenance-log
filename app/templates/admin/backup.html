@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
 {% block title %}{{ t('backup.title') }} · {{ t('app.short') }}{% endblock %}
 {% block content %}
 <div class="page-head"><h1>{{ t('backup.title') }}</h1></div>
@@ -9,7 +10,7 @@
     <p class="muted text-sm">{{ t('backup.download_hint') }}</p>
     <form method="post" action="/admin/backup/download">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="btn" type="submit">{{ t('backup.download_btn') }}</button>
+      <button class="btn" type="submit" data-tip="{{ t('tip.action.backup_download') }}">{{ t('backup.download_btn') }}</button>
     </form>
   </div>
 
@@ -20,10 +21,10 @@
           onsubmit="return confirm('{{ t('backup.restore_confirm') }}')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field">
-        <label for="archive">{{ t('backup.choose_file') }}</label>
+        <label for="archive">{{ t('backup.choose_file') }}{{ m.tip('tip.backup.file', t) }}</label>
         <input type="file" id="archive" name="archive" accept=".zip,application/zip" required>
       </div>
-      <button class="btn btn-danger" type="submit">{{ t('backup.restore_btn') }}</button>
+      <button class="btn btn-danger" type="submit" data-tip="{{ t('tip.action.backup_restore') }}">{{ t('backup.restore_btn') }}</button>
     </form>
   </div>
 </div>

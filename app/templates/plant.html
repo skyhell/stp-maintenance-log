@@ -30,7 +30,8 @@
       <input type="date" name="date_to">
     </div>
     <div class="field">
-      <button class="btn btn-secondary" type="submit">⬇ {{ t('report.button') }}</button>
+      <button class="btn btn-secondary" type="submit"
+              data-tip="{{ t('tip.action.report_pdf') }}">⬇ {{ t('report.button') }}</button>
     </div>
   </div>
   <div class="hint">{{ t('report.range_hint') }}</div>
@@ -40,18 +41,18 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <div class="field">
-    <label for="name">{{ t('asset.name') }}</label>
+    <label for="name">{{ t('asset.name') }}{{ m.tip('tip.asset.name', t) }}</label>
     <input id="name" name="name" required value="{{ plant.name }}">
   </div>
 
   <div class="field-row">
     <div class="field">
-      <label for="install_date">{{ t('asset.install_date') }}</label>
+      <label for="install_date">{{ t('asset.install_date') }}{{ m.tip('tip.asset.install_date', t) }}</label>
       <input type="date" id="install_date" name="install_date"
              value="{{ plant.install_date if plant.install_date else '' }}">
     </div>
     <div class="field">
-      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}</label>
+      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}{{ m.tip('tip.asset.next_maintenance', t) }}</label>
       <input type="date" id="next_maintenance_date" name="next_maintenance_date"
              value="{{ plant.next_maintenance_date if plant.next_maintenance_date else '' }}">
     </div>
@@ -66,34 +67,35 @@
   </div>
 
   <div class="field">
-    <label for="address">{{ t('asset.address') }}</label>
+    <label for="address">{{ t('asset.address') }}{{ m.tip('tip.asset.address', t) }}</label>
     <input id="address" name="address" value="{{ plant.address or '' }}">
   </div>
 
   <div class="field-row">
     <div class="field">
-      <label for="latitude">{{ t('asset.latitude') }}</label>
+      <label for="latitude">{{ t('asset.latitude') }}{{ m.tip('tip.asset.latitude', t) }}</label>
       <input id="latitude" name="latitude" inputmode="decimal"
              value="{{ plant.latitude if plant.latitude is not none else '' }}">
     </div>
     <div class="field">
-      <label for="longitude">{{ t('asset.longitude') }}</label>
+      <label for="longitude">{{ t('asset.longitude') }}{{ m.tip('tip.asset.longitude', t) }}</label>
       <input id="longitude" name="longitude" inputmode="decimal"
              value="{{ plant.longitude if plant.longitude is not none else '' }}">
     </div>
   </div>
   <div class="field">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)">📍 {{ t('asset.use_gps') }}</button>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)"
+            data-tip="{{ t('tip.action.gps') }}">📍 {{ t('asset.use_gps') }}</button>
   </div>
 
   <div class="field">
-    <label for="comment">{{ t('asset.comment') }}</label>
+    <label for="comment">{{ t('asset.comment') }}{{ m.tip('tip.asset.comment', t) }}</label>
     <textarea id="comment" name="comment">{{ plant.comment or '' }}</textarea>
   </div>
 
   <div class="flex" style="margin-top:8px;">
-    <button class="btn" type="submit">{{ t('common.save') }}</button>
-    <a href="/plant" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+    <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
+    <a href="/plant" class="btn btn-secondary" data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</a>
   </div>
 </form>
 {% endblock %}

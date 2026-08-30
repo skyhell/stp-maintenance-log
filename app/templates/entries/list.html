@@ -4,13 +4,13 @@
 {% block content %}
 <div class="page-head">
   <h1>{{ t('entry.title') }}</h1>
-  <a href="/entries/new" class="btn">＋ {{ t('entry.new') }}</a>
+  <a href="/entries/new" class="btn" data-tip="{{ t('tip.action.new_entry') }}">＋ {{ t('entry.new') }}</a>
 </div>
 
 <form method="get" action="/entries" class="card" style="margin-bottom:16px;">
   <div class="field-row">
     <div class="field">
-      <label>{{ t('entry.filter_asset') }}</label>
+      <label>{{ t('entry.filter_asset') }}{{ m.tip('tip.filter.asset', t) }}</label>
       <select name="asset_id">
         <option value="">{{ t('common.all') }}</option>
         {% for a in assets %}
@@ -19,7 +19,7 @@
       </select>
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_activity') }}</label>
+      <label>{{ t('entry.filter_activity') }}{{ m.tip('tip.filter.activity', t) }}</label>
       <select name="activity_id">
         <option value="">{{ t('common.all') }}</option>
         {% for act in activities %}
@@ -28,7 +28,7 @@
       </select>
     </div>
     <div class="field">
-      <label>{{ t('report.quick') }}</label>
+      <label>{{ t('report.quick') }}{{ m.tip('tip.filter.year', t) }}</label>
       <select name="year">
         <option value="">{{ t('common.all') }}</option>
         {% for y in years %}
@@ -37,23 +37,23 @@
       </select>
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_from') }}</label>
+      <label>{{ t('entry.filter_from') }}{{ m.tip('tip.filter.from', t) }}</label>
       <input type="date" name="date_from" value="{{ filters.date_from }}">
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_to') }}</label>
+      <label>{{ t('entry.filter_to') }}{{ m.tip('tip.filter.to', t) }}</label>
       <input type="date" name="date_to" value="{{ filters.date_to }}">
     </div>
     <div class="field">
-      <label>{{ t('entry.filter_text') }}</label>
+      <label>{{ t('entry.filter_text') }}{{ m.tip('tip.filter.text', t) }}</label>
       <input type="search" name="q" value="{{ filters.q }}" placeholder="{{ t('common.search') }}">
     </div>
   </div>
   <div class="flex flex-wrap">
-    <button class="btn btn-sm" type="submit">{{ t('common.filter') }}</button>
-    <a href="/entries" class="btn btn-secondary btn-sm">{{ t('common.reset') }}</a>
+    <button class="btn btn-sm" type="submit" data-tip="{{ t('tip.action.filter') }}">{{ t('common.filter') }}</button>
+    <a href="/entries" class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.reset') }}">{{ t('common.reset') }}</a>
     <span class="spacer"></span>
-    <a class="btn btn-secondary btn-sm"
+    <a class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.csv') }}"
        href="/entries/export.csv?asset_id={{ filters.asset_id or '' }}&activity_id={{ filters.activity_id or '' }}&year={{ filters.year }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}">
       ⬇ CSV
     </a>
@@ -71,11 +71,12 @@
         {% if e.asset %}<span>· {{ m.asset_type_badge(e.asset, t) }} {{ e.asset.name }}</span>{% endif %}
         {% if e.operating_hours is not none %}<span>⏱ {{ e.operating_hours }} h</span>{% endif %}
         <span class="spacer"></span>
-        <a href="/entries/{{ e.id }}/edit" class="btn-ghost btn btn-sm">{{ t('common.edit') }}</a>
+        <a href="/entries/{{ e.id }}/edit" class="btn-ghost btn btn-sm" data-tip="{{ t('tip.action.edit') }}">{{ t('common.edit') }}</a>
         <form method="post" action="/entries/{{ e.id }}/delete" class="inline-form"
               onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit">{{ t('common.delete') }}</button>
+          <button class="btn-ghost btn btn-sm" style="color:var(--danger)" type="submit"
+                  data-tip="{{ t('tip.action.delete') }}">{{ t('common.delete') }}</button>
         </form>
       </div>
       {% if e.description %}<div>{{ e.description }}</div>{% endif %}

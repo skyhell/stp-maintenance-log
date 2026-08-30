@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
 {% block title %}{{ t('asset.new') if not asset else t('asset.edit') }} · {{ t('app.short') }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>{{ t('asset.new') if not asset else t('asset.edit') }}</h1>
-  <a href="/assets" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+  <a href="/assets" class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.back') }}">← {{ t('common.back') }}</a>
 </div>
 
 {% if error %}<div class="flash flash-error">{{ t(error) }}</div>{% endif %}
@@ -15,17 +16,17 @@
 
   <div class="field-row">
     <div class="field">
-      <label for="uid">{{ t('asset.uid') }} <span class="muted">({{ t('common.required') }})</span></label>
+      <label for="uid">{{ t('asset.uid') }} <span class="muted">({{ t('common.required') }})</span>{{ m.tip('tip.asset.uid', t) }}</label>
       <input id="uid" name="uid" required value="{{ asset.uid if asset else (form.uid if form else '') }}">
     </div>
     <div class="field">
-      <label for="name">{{ t('asset.name') }} <span class="muted">({{ t('common.required') }})</span></label>
+      <label for="name">{{ t('asset.name') }} <span class="muted">({{ t('common.required') }})</span>{{ m.tip('tip.asset.name', t) }}</label>
       <input id="name" name="name" required value="{{ asset.name if asset else (form.name if form else '') }}">
     </div>
   </div>
 
   <div class="field">
-    <label for="type">{{ t('asset.type') }}</label>
+    <label for="type">{{ t('asset.type') }}{{ m.tip('tip.asset.type', t) }}</label>
     <select id="type" name="type">
       {% for ty in asset_types %}
       <option value="{{ ty.value }}" {% if asset and asset.type == ty %}selected{% endif %}>
@@ -37,12 +38,12 @@
 
   <div class="field-row">
     <div class="field">
-      <label for="install_date">{{ t('asset.install_date') }}</label>
+      <label for="install_date">{{ t('asset.install_date') }}{{ m.tip('tip.asset.install_date', t) }}</label>
       <input type="date" id="install_date" name="install_date"
              value="{{ asset.install_date if asset and asset.install_date else '' }}">
     </div>
     <div class="field">
-      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}</label>
+      <label for="next_maintenance_date">{{ t('asset.next_maintenance') }}{{ m.tip('tip.asset.next_maintenance', t) }}</label>
       <input type="date" id="next_maintenance_date" name="next_maintenance_date"
              value="{{ asset.next_maintenance_date if asset and asset.next_maintenance_date else '' }}">
     </div>
@@ -57,34 +58,34 @@
   </div>
 
   <div class="field">
-    <label for="address">{{ t('asset.address') }}</label>
+    <label for="address">{{ t('asset.address') }}{{ m.tip('tip.asset.address', t) }}</label>
     <input id="address" name="address" value="{{ asset.address if asset and asset.address else '' }}">
   </div>
 
   <div class="field-row">
     <div class="field">
-      <label for="latitude">{{ t('asset.latitude') }}</label>
+      <label for="latitude">{{ t('asset.latitude') }}{{ m.tip('tip.asset.latitude', t) }}</label>
       <input id="latitude" name="latitude" inputmode="decimal"
              value="{{ asset.latitude if asset and asset.latitude is not none else '' }}">
     </div>
     <div class="field">
-      <label for="longitude">{{ t('asset.longitude') }}</label>
+      <label for="longitude">{{ t('asset.longitude') }}{{ m.tip('tip.asset.longitude', t) }}</label>
       <input id="longitude" name="longitude" inputmode="decimal"
              value="{{ asset.longitude if asset and asset.longitude is not none else '' }}">
     </div>
   </div>
   <div class="field">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)">📍 {{ t('asset.use_gps') }}</button>
-    <div class="hint">{{ t('asset.use_gps') }} — HTTPS erforderlich / required for GPS.</div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="captureLocation(this)"
+            data-tip="{{ t('tip.action.gps') }}">📍 {{ t('asset.use_gps') }}</button>
   </div>
 
   <div class="field">
-    <label for="comment">{{ t('asset.comment') }}</label>
+    <label for="comment">{{ t('asset.comment') }}{{ m.tip('tip.asset.comment', t) }}</label>
     <textarea id="comment" name="comment">{{ asset.comment or '' if asset else '' }}</textarea>
   </div>
 
   <div class="field">
-    <label for="images">{{ t('asset.add_images') }}</label>
+    <label for="images">{{ t('asset.add_images') }}{{ m.tip('tip.asset.images', t) }}</label>
     <input type="file" id="images" name="images" accept="image/*" multiple capture="environment">
   </div>
 
@@ -98,7 +99,8 @@
         <form method="post" action="/assets/image/{{ img.id }}/delete" class="inline-form"
               onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)">✕</button>
+          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)"
+                data-tip="{{ t('tip.action.delete_image') }}">✕</button>
         </form>
       </div>
       {% endfor %}
@@ -107,8 +109,8 @@
   {% endif %}
 
   <div class="flex" style="margin-top:8px;">
-    <button class="btn" type="submit">{{ t('common.save') }}</button>
-    <a href="/assets" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+    <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
+    <a href="/assets" class="btn btn-secondary" data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</a>
   </div>
 </form>
 {% endblock %}

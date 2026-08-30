@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-head">
   <h1>{{ t('entry.new') if not entry else t('entry.edit') }}</h1>
-  <a href="/entries" class="btn btn-secondary btn-sm">← {{ t('common.back') }}</a>
+  <a href="/entries" class="btn btn-secondary btn-sm" data-tip="{{ t('tip.action.back') }}">← {{ t('common.back') }}</a>
 </div>
 
 {% if error %}<div class="flash flash-error">{{ t(error) }}</div>{% endif %}
@@ -16,17 +16,17 @@
 
   <div class="field-row">
     <div class="field">
-      <label for="occurred_date">{{ t('common.date') }}</label>
+      <label for="occurred_date">{{ t('common.date') }}{{ m.tip('tip.entry.date', t) }}</label>
       <input type="date" id="occurred_date" name="occurred_date" value="{{ now[:10] }}">
     </div>
     <div class="field">
-      <label for="occurred_time">{{ t('common.time') }}</label>
+      <label for="occurred_time">{{ t('common.time') }}{{ m.tip('tip.entry.time', t) }}</label>
       <input type="text" id="occurred_time" name="occurred_time" value="{{ now[11:16] }}"
              pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM"
              inputmode="numeric" maxlength="5" autocomplete="off">
     </div>
     <div class="field">
-      <label for="asset_id">{{ t('entry.asset') }}</label>
+      <label for="asset_id">{{ t('entry.asset') }}{{ m.tip('tip.entry.asset', t) }}</label>
       {% set sel_asset = form.asset_id if form else (entry.asset_id if entry else none) %}
       <select id="asset_id" name="asset_id">
         <option value="">{{ t('common.none') }}</option>
@@ -50,7 +50,7 @@
   </div>
 
   <div class="field">
-    <label for="description">{{ t('entry.description') }}</label>
+    <label for="description">{{ t('entry.description') }}{{ m.tip('tip.entry.description', t) }}</label>
     <div class="input-with-btn">
       <textarea id="description" name="description">{{ form.description if form else (entry.description or '' if entry else '') }}</textarea>
       {{ m.speech_button('description', t, lang) }}
@@ -58,7 +58,7 @@
   </div>
 
   <div class="field">
-    <label for="notes">{{ t('entry.notes') }}</label>
+    <label for="notes">{{ t('entry.notes') }}{{ m.tip('tip.entry.notes', t) }}</label>
     <div class="input-with-btn">
       <textarea id="notes" name="notes">{{ form.notes if form else (entry.notes or '' if entry else '') }}</textarea>
       {{ m.speech_button('notes', t, lang) }}
@@ -66,7 +66,7 @@
   </div>
 
   <div class="field">
-    <label for="comment">{{ t('entry.comment') }}</label>
+    <label for="comment">{{ t('entry.comment') }}{{ m.tip('tip.entry.comment', t) }}</label>
     <div class="input-with-btn">
       <textarea id="comment" name="comment">{{ form.comment if form else (entry.comment or '' if entry else '') }}</textarea>
       {{ m.speech_button('comment', t, lang) }}
@@ -74,13 +74,13 @@
   </div>
 
   <div class="field">
-    <label for="operating_hours">{{ t('entry.operating_hours') }} <span class="muted">({{ t('common.required') }})</span></label>
+    <label for="operating_hours">{{ t('entry.operating_hours') }} <span class="muted">({{ t('common.required') }})</span>{{ m.tip('tip.entry.operating_hours', t) }}</label>
     <input id="operating_hours" name="operating_hours" inputmode="decimal" required style="max-width:200px;"
            value="{{ form.operating_hours if form else (entry.operating_hours if entry and entry.operating_hours is not none else '') }}">
   </div>
 
   <div class="field">
-    <label for="images">{{ t('entry.add_images') }}</label>
+    <label for="images">{{ t('entry.add_images') }}{{ m.tip('tip.entry.images', t) }}</label>
     <input type="file" id="images" name="images" accept="image/*" multiple capture="environment">
   </div>
 
@@ -94,7 +94,8 @@
         <form method="post" action="/entries/image/{{ img.id }}/delete" class="inline-form"
               onsubmit="return confirm('{{ t('common.confirm_delete') }}')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)">✕</button>
+          <button type="submit" class="btn-ghost btn btn-sm" style="color:var(--danger)"
+                data-tip="{{ t('tip.action.delete_image') }}">✕</button>
         </form>
       </div>
       {% endfor %}
@@ -103,8 +104,8 @@
   {% endif %}
 
   <div class="flex" style="margin-top:8px;">
-    <button class="btn" type="submit">{{ t('common.save') }}</button>
-    <a href="/entries" class="btn btn-secondary">{{ t('common.cancel') }}</a>
+    <button class="btn" type="submit" data-tip="{{ t('tip.action.save') }}">{{ t('common.save') }}</button>
+    <a href="/entries" class="btn btn-secondary" data-tip="{{ t('tip.action.cancel') }}">{{ t('common.cancel') }}</a>
   </div>
 </form>
 {% endblock %}

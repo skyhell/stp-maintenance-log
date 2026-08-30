@@ -7,9 +7,12 @@
 <div class="page-head"><h1>{{ t('map.title') }}</h1></div>
 
 <div class="map-toolbar">
-  <button type="button" class="map-add-btn" data-type="shaft">{{ t('map.add_shaft') }}</button>
-  <button type="button" class="map-add-btn" data-type="connection">{{ t('map.add_connection') }}</button>
-  <button type="button" class="map-add-btn" data-type="connect">🔗 {{ t('map.add_pipe') }}</button>
+  <button type="button" class="map-add-btn" data-type="shaft"
+          data-tip="{{ t('tip.map.add_shaft') }}">{{ t('map.add_shaft') }}</button>
+  <button type="button" class="map-add-btn" data-type="connection"
+          data-tip="{{ t('tip.map.add_connection') }}">{{ t('map.add_connection') }}</button>
+  <button type="button" class="map-add-btn" data-type="connect"
+          data-tip="{{ t('tip.map.add_pipe') }}">🔗 {{ t('map.add_pipe') }}</button>
   <span class="map-place-hint" id="placeHint"></span>
 </div>
 
