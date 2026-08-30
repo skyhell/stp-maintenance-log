@@ -69,16 +69,10 @@ def _migrate_schema() -> None:
     with engine.begin() as conn:
         cols = {row[1] for row in conn.execute(text("PRAGMA table_info(assets)"))}
         if "maintenance_interval_months" not in cols:
-            conn.execute(
-                text("ALTER TABLE assets ADD COLUMN maintenance_interval_months INTEGER")
-            )
-        cols = {
-            row[1] for row in conn.execute(text("PRAGMA table_info(maintenance_entries)"))
-        }
+            conn.execute(text("ALTER TABLE assets ADD COLUMN maintenance_interval_months INTEGER"))
+        cols = {row[1] for row in conn.execute(text("PRAGMA table_info(maintenance_entries)"))}
         if "operating_hours" not in cols:
-            conn.execute(
-                text("ALTER TABLE maintenance_entries ADD COLUMN operating_hours FLOAT")
-            )
+            conn.execute(text("ALTER TABLE maintenance_entries ADD COLUMN operating_hours FLOAT"))
 
 
 def _bootstrap_plant() -> None:
@@ -86,9 +80,7 @@ def _bootstrap_plant() -> None:
     from app.models.asset import Asset, AssetType
 
     with SessionLocal() as db:
-        count = db.scalar(
-            select(func.count(Asset.id)).where(Asset.type == AssetType.plant)
-        ) or 0
+        count = db.scalar(select(func.count(Asset.id)).where(Asset.type == AssetType.plant)) or 0
         if count == 0:
             db.add(
                 Asset(

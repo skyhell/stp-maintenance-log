@@ -12,9 +12,7 @@ from app.models.activity import Activity
 
 def list_activities(db: Session) -> list[Activity]:
     """All activities, most recently used first."""
-    return list(
-        db.scalars(select(Activity).order_by(Activity.last_used_at.desc())).all()
-    )
+    return list(db.scalars(select(Activity).order_by(Activity.last_used_at.desc())).all())
 
 
 def get_or_create_activity(db: Session, name: str | None) -> Activity | None:

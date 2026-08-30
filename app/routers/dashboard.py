@@ -50,21 +50,15 @@ def dashboard(
 
     recent = list(
         db.scalars(
-            select(MaintenanceEntry)
-            .order_by(MaintenanceEntry.occurred_at.desc())
-            .limit(8)
+            select(MaintenanceEntry).order_by(MaintenanceEntry.occurred_at.desc()).limit(8)
         ).all()
     )
 
     recent_measurements = list(
-        db.scalars(
-            select(Measurement).order_by(Measurement.measured_at.desc()).limit(8)
-        ).all()
+        db.scalars(select(Measurement).order_by(Measurement.measured_at.desc()).limit(8)).all()
     )
 
-    total_assets = (
-        db.scalar(select(func.count(Asset.id)).where(Asset.type.in_(OBJECT_TYPES))) or 0
-    )
+    total_assets = db.scalar(select(func.count(Asset.id)).where(Asset.type.in_(OBJECT_TYPES))) or 0
     total_entries = db.scalar(select(func.count(MaintenanceEntry.id))) or 0
 
     return render(

@@ -12,8 +12,8 @@ from app.database import Base
 
 
 class AssetType(str, enum.Enum):
-    plant = "plant"          # Anlage — the single treatment-plant "head" (singleton)
-    shaft = "shaft"          # Schacht (manhole)
+    plant = "plant"  # Anlage — the single treatment-plant "head" (singleton)
+    shaft = "shaft"  # Schacht (manhole)
     connection = "connection"  # Anschluss
 
 
@@ -82,9 +82,7 @@ class AssetImage(Base):
     __tablename__ = "asset_images"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    asset_id: Mapped[int] = mapped_column(
-        ForeignKey("assets.id"), nullable=False, index=True
-    )
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), nullable=False, index=True)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)  # stored name on disk
     orig_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

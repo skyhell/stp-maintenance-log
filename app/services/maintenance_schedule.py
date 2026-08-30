@@ -33,12 +33,8 @@ def refresh_next_maintenance(db: Session, asset_id: int | None) -> None:
     if asset is None or not asset.maintenance_interval_months:
         return
     latest = db.scalar(
-        select(func.max(MaintenanceEntry.occurred_at)).where(
-            MaintenanceEntry.asset_id == asset_id
-        )
+        select(func.max(MaintenanceEntry.occurred_at)).where(MaintenanceEntry.asset_id == asset_id)
     )
     if latest is None:
         return
-    asset.next_maintenance_date = add_months(
-        latest.date(), asset.maintenance_interval_months
-    )
+    asset.next_maintenance_date = add_months(latest.date(), asset.maintenance_interval_months)

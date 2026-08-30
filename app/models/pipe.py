@@ -18,12 +18,8 @@ class PipeSegment(Base):
     __tablename__ = "pipe_segments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    from_asset_id: Mapped[int] = mapped_column(
-        ForeignKey("assets.id"), nullable=False, index=True
-    )
-    to_asset_id: Mapped[int] = mapped_column(
-        ForeignKey("assets.id"), nullable=False, index=True
-    )
+    from_asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), nullable=False, index=True)
+    to_asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     from_asset: Mapped[Asset] = relationship(foreign_keys=[from_asset_id])  # noqa: F821

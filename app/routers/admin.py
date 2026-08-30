@@ -100,9 +100,7 @@ def edit_user(
     if role in (r.value for r in UserRole):
         # Prevent an admin from demoting the last remaining admin.
         if user.role == UserRole.admin and role != "admin":
-            admin_count = len(
-                db.scalars(select(User).where(User.role == UserRole.admin)).all()
-            )
+            admin_count = len(db.scalars(select(User).where(User.role == UserRole.admin)).all())
             if admin_count <= 1:
                 flash(request, "error.generic", "error")
                 return RedirectResponse("/admin/users", status_code=303)
@@ -132,9 +130,7 @@ def delete_user(
         flash(request, "error.generic", "error")
         return RedirectResponse("/admin/users", status_code=303)
     if user.role == UserRole.admin:
-        admin_count = len(
-            db.scalars(select(User).where(User.role == UserRole.admin)).all()
-        )
+        admin_count = len(db.scalars(select(User).where(User.role == UserRole.admin)).all())
         if admin_count <= 1:
             flash(request, "error.generic", "error")
             return RedirectResponse("/admin/users", status_code=303)
@@ -170,9 +166,7 @@ def backup_download(
     except BackupError as exc:
         logger.error("Backup failed: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return FileResponse(
-        path, media_type="application/zip", filename=path.name
-    )
+    return FileResponse(path, media_type="application/zip", filename=path.name)
 
 
 @router.post("/backup/restore")
@@ -189,9 +183,7 @@ async def backup_restore(
     try:
         tmp.write_bytes(await archive.read())
         result = restore_backup(tmp)
-        logger.warning(
-            "Restore complete: %s uploads restored", result.get("restored_uploads")
-        )
+        logger.warning("Restore complete: %s uploads restored", result.get("restored_uploads"))
     except BackupError as exc:
         logger.error("Restore failed: %s", exc)
         flash(request, "backup.restore_error", "error")

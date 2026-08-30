@@ -104,10 +104,7 @@ def _thumbnails(e: MaintenanceEntry):
             thumbs.append(flowable)
     if not thumbs:
         return None
-    grid = [
-        thumbs[i : i + _THUMBS_PER_ROW]
-        for i in range(0, len(thumbs), _THUMBS_PER_ROW)
-    ]
+    grid = [thumbs[i : i + _THUMBS_PER_ROW] for i in range(0, len(thumbs), _THUMBS_PER_ROW)]
     # Pad the last row so the Table is rectangular.
     for row in grid:
         while len(row) < _THUMBS_PER_ROW:
@@ -137,9 +134,7 @@ def _measurement_details(m: Measurement, t: Translator) -> str:
 
 
 def _event_details(ev: AssetEvent, t: Translator) -> str:
-    lines = [
-        f"{ev.asset_name} ({ev.asset_uid}) — {t('report.action.' + ev.action.value)}"
-    ]
+    lines = [f"{ev.asset_name} ({ev.asset_uid}) — {t('report.action.' + ev.action.value)}"]
     if ev.changes:
         for label_key, old, new in json.loads(ev.changes):
             lines.append(f"{t(label_key)}: {old} → {new}")
@@ -172,12 +167,8 @@ def build_plant_report(
         "cell", parent=styles["Normal"], fontSize=8, leading=10, alignment=TA_LEFT
     )
     head = ParagraphStyle("head", parent=cell, textColor=colors.white, fontSize=8)
-    title_style = ParagraphStyle(
-        "title", parent=styles["Title"], fontSize=16, spaceAfter=4
-    )
-    sub_style = ParagraphStyle(
-        "sub", parent=styles["Normal"], fontSize=9, textColor=colors.grey
-    )
+    title_style = ParagraphStyle("title", parent=styles["Title"], fontSize=16, spaceAfter=4)
+    sub_style = ParagraphStyle("sub", parent=styles["Normal"], fontSize=9, textColor=colors.grey)
 
     # One chronological stream (oldest first) across all three sources.
     # Each row: (occurred, type_label, username, details_text, entry_or_None).
@@ -212,11 +203,9 @@ def build_plant_report(
                 None,
             )
         )
-    rows.sort(key=lambda r: (r[0].replace(tzinfo=None) if r[0].tzinfo else r[0]))
+    rows.sort(key=lambda r: r[0].replace(tzinfo=None) if r[0].tzinfo else r[0])
 
-    h2 = ParagraphStyle(
-        "h2", parent=styles["Heading2"], fontSize=12, spaceBefore=14, spaceAfter=6
-    )
+    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontSize=12, spaceBefore=14, spaceAfter=6)
     generated_style = ParagraphStyle(
         "generated", parent=styles["Normal"], fontSize=10, spaceBefore=2
     )
@@ -240,12 +229,13 @@ def build_plant_report(
     generated = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     story = [Paragraph(t("report.title"), title_style)]
-    story.append(Paragraph(plant_name, ParagraphStyle(
-        "plantname", parent=styles["Heading2"], fontSize=13, spaceAfter=2
-    )))
     story.append(
-        Paragraph(f"<b>{t('report.generated')}: {generated}</b>", generated_style)
+        Paragraph(
+            plant_name,
+            ParagraphStyle("plantname", parent=styles["Heading2"], fontSize=13, spaceAfter=2),
+        )
     )
+    story.append(Paragraph(f"<b>{t('report.generated')}: {generated}</b>", generated_style))
 
     story.append(Paragraph(t("plant.title"), h2))
     coords = "—"
@@ -282,9 +272,7 @@ def build_plant_report(
         report_range = t("common.all")
     period = "—"
     if rows:
-        period = (
-            f"{rows[0][0].strftime('%d/%m/%Y')} – {rows[-1][0].strftime('%d/%m/%Y')}"
-        )
+        period = f"{rows[0][0].strftime('%d/%m/%Y')} – {rows[-1][0].strftime('%d/%m/%Y')}"
     summary_rows = [
         (t("report.range"), report_range),
         (t("report.count.shafts"), str(object_counts.get("shafts", 0))),

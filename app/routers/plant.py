@@ -45,9 +45,7 @@ def _parse_float(value: str | None) -> float | None:
 
 def _get_plant(db: Session) -> Asset:
     """Return the singleton plant, creating a default one if missing."""
-    plant = db.scalar(
-        select(Asset).where(Asset.type == AssetType.plant).order_by(Asset.id)
-    )
+    plant = db.scalar(select(Asset).where(Asset.type == AssetType.plant).order_by(Asset.id))
     if plant is None:
         plant = Asset(uid="ANLAGE", name="Kläranlage", type=AssetType.plant)
         db.add(plant)
@@ -142,10 +140,7 @@ def plant_report(
         ).all()
     )
     object_counts = {
-        "shafts": db.scalar(
-            select(func.count(Asset.id)).where(Asset.type == AssetType.shaft)
-        )
-        or 0,
+        "shafts": db.scalar(select(func.count(Asset.id)).where(Asset.type == AssetType.shaft)) or 0,
         "connections": db.scalar(
             select(func.count(Asset.id)).where(Asset.type == AssetType.connection)
         )

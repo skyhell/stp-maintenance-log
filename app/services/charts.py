@@ -15,7 +15,10 @@ _M_LEFT, _M_RIGHT, _M_TOP, _M_BOTTOM = 46, 14, 14, 26
 
 def _esc(s: str) -> str:
     return (
-        str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
         .replace('"', "&quot;")
     )
 

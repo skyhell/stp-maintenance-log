@@ -93,9 +93,7 @@ def _current_user_or_none(request: Request, db: Session) -> User | None:
 
 
 # --- FastAPI dependencies -------------------------------------------------
-def get_current_user_optional(
-    request: Request, db: Session = Depends(get_db)
-) -> User | None:
+def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> User | None:
     return _current_user_or_none(request, db)
 
 

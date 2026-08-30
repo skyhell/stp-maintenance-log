@@ -45,9 +45,7 @@ async def save_upload(file: UploadFile) -> tuple[str, str]:
     if not data:
         raise UploadError("Empty file")
     if len(data) > settings.max_upload_bytes:
-        raise UploadError(
-            f"File too large (> {settings.max_upload_mb} MB)"
-        )
+        raise UploadError(f"File too large (> {settings.max_upload_mb} MB)")
 
     stored_name = f"{secrets.token_hex(16)}{ext}"
     dest = settings.upload_path / stored_name

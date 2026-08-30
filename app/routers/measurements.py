@@ -211,9 +211,7 @@ def list_measurements(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    measurements, selected_year = _filtered_measurements(
-        db, parameter, year, date_from, date_to
-    )
+    measurements, selected_year = _filtered_measurements(db, parameter, year, date_from, date_to)
     parameters = _parameters(db)
 
     total = len(measurements)
@@ -253,9 +251,7 @@ def measurement_charts(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    measurements, selected_year = _filtered_measurements(
-        db, parameter, year, date_from, date_to
-    )
+    measurements, selected_year = _filtered_measurements(db, parameter, year, date_from, date_to)
     parameters = _parameters(db)
     # When a single parameter is selected, only chart that one.
     order = [parameter] if parameter else parameters
@@ -332,9 +328,7 @@ async def save_parameters(
             error = "measure.threshold_invalid"
         elif lo is not None and hi is not None and lo > hi:
             error = "measure.threshold_order"
-        rows.append(
-            {"name": name, "unit": unit, "min": raw_lo, "max": raw_hi, "error": error}
-        )
+        rows.append({"name": name, "unit": unit, "min": raw_lo, "max": raw_hi, "error": error})
         pending.append((name, unit, lo, hi))
 
     # A typo must not silently wipe a saved threshold: re-render with the input.

@@ -65,9 +65,7 @@ def change_password(
         error = "account.password_mismatch"
 
     if error:
-        return render(
-            request, "account.html", {"error": error}, db=db, user=user, status_code=400
-        )
+        return render(request, "account.html", {"error": error}, db=db, user=user, status_code=400)
 
     user.password_hash = hash_password(new_password)
     db.commit()

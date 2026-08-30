@@ -62,9 +62,7 @@ def assets_json(
 ):
     """Return assets that have coordinates, for the map markers."""
     assets = db.scalars(
-        select(Asset)
-        .where(Asset.latitude.is_not(None))
-        .where(Asset.longitude.is_not(None))
+        select(Asset).where(Asset.latitude.is_not(None)).where(Asset.longitude.is_not(None))
     ).all()
     return {
         "assets": [
@@ -77,9 +75,7 @@ def assets_json(
                 "lon": a.longitude,
                 "address": a.address,
                 "next_maintenance": (
-                    a.next_maintenance_date.isoformat()
-                    if a.next_maintenance_date
-                    else None
+                    a.next_maintenance_date.isoformat() if a.next_maintenance_date else None
                 ),
             }
             for a in assets
@@ -95,10 +91,7 @@ def pipes_json(
     """Pipe segments (sewer lines) between assets, for the map."""
     pipes = db.scalars(select(PipeSegment)).all()
     return {
-        "pipes": [
-            {"id": p.id, "from_id": p.from_asset_id, "to_id": p.to_asset_id}
-            for p in pipes
-        ]
+        "pipes": [{"id": p.id, "from_id": p.from_asset_id, "to_id": p.to_asset_id} for p in pipes]
     }
 
 
@@ -126,10 +119,8 @@ def create_pipe(
     existing = db.scalar(
         select(PipeSegment).where(
             or_(
-                (PipeSegment.from_asset_id == from_id)
-                & (PipeSegment.to_asset_id == to_id),
-                (PipeSegment.from_asset_id == to_id)
-                & (PipeSegment.to_asset_id == from_id),
+                (PipeSegment.from_asset_id == from_id) & (PipeSegment.to_asset_id == to_id),
+                (PipeSegment.from_asset_id == to_id) & (PipeSegment.to_asset_id == from_id),
             )
         )
     )

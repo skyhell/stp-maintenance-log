@@ -24,9 +24,7 @@ from app.services.twofa import verify_and_consume_backup_code, verify_totp
 router = APIRouter()
 
 # Shared limiter for password and 2FA attempts (per client IP), like fleetbox.
-_login_limiter = RateLimiter(
-    settings.rate_limit_max_attempts, settings.rate_limit_window_seconds
-)
+_login_limiter = RateLimiter(settings.rate_limit_max_attempts, settings.rate_limit_window_seconds)
 
 
 @router.get("/login")
@@ -54,9 +52,7 @@ def login_submit(
     user = authenticate(db, username.strip(), password)
     if not user:
         _login_limiter.record_failure(key)
-        return render(
-            request, "auth/login.html", {"error": "login.error"}, db=db, status_code=401
-        )
+        return render(request, "auth/login.html", {"error": "login.error"}, db=db, status_code=401)
     if user.totp_enabled and user.totp_secret:
         # Defer the actual login until the second factor is verified.
         request.session[SESSION_PENDING_2FA] = user.id

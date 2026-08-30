@@ -77,9 +77,7 @@ def render(
     }
     if context:
         base_context.update(context)
-    return templates.TemplateResponse(
-        request, template_name, base_context, status_code=status_code
-    )
+    return templates.TemplateResponse(request, template_name, base_context, status_code=status_code)
 
 
 def flash(request: Request, message: str, category: str = "success") -> None:

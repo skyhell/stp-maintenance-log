@@ -109,13 +109,9 @@ def _filtered_entries(
     else:
         df, dt_ = _parse_date(date_from), _parse_date(date_to)
     if df:
-        stmt = stmt.where(
-            MaintenanceEntry.occurred_at >= datetime.combine(df, time.min, UTC)
-        )
+        stmt = stmt.where(MaintenanceEntry.occurred_at >= datetime.combine(df, time.min, UTC))
     if dt_:
-        stmt = stmt.where(
-            MaintenanceEntry.occurred_at <= datetime.combine(dt_, time.max, UTC)
-        )
+        stmt = stmt.where(MaintenanceEntry.occurred_at <= datetime.combine(dt_, time.max, UTC))
     if q:
         like = f"%{q.strip()}%"
         stmt = stmt.where(
@@ -187,9 +183,7 @@ def export_csv(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    entries, _, _ = _filtered_entries(
-        db, asset_id, activity_id, year, q, date_from, date_to
-    )
+    entries, _, _ = _filtered_entries(db, asset_id, activity_id, year, q, date_from, date_to)
     t = get_translator(normalize_lang(request.cookies.get(LANGUAGE_COOKIE)))
 
     buf = io.StringIO()

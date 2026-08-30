@@ -23,9 +23,7 @@ class MaintenanceEntry(Base):
     )
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    asset_id: Mapped[int | None] = mapped_column(
-        ForeignKey("assets.id"), nullable=True, index=True
-    )
+    asset_id: Mapped[int | None] = mapped_column(ForeignKey("assets.id"), nullable=True, index=True)
     activity_id: Mapped[int | None] = mapped_column(
         ForeignKey("activities.id"), nullable=True, index=True
     )
