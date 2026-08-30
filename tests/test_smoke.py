@@ -270,9 +270,7 @@ def test_backup_and_restore():
 
         # Download a backup snapshot.
         token = _csrf(client, "/admin/backup")
-        r = client.post(
-            "/admin/backup/download", data={"csrf_token": token}
-        )
+        r = client.post("/admin/backup/download", data={"csrf_token": token})
         assert r.status_code == 200
         assert r.headers["content-type"] == "application/zip"
         zip_bytes = r.content
@@ -318,9 +316,7 @@ def test_maintenance_interval_auto_bump():
             },
             follow_redirects=False,
         )
-        asset = next(
-            a for a in client.get("/api/assets").json()["assets"] if a["uid"] == "INT-1"
-        )
+        asset = next(a for a in client.get("/api/assets").json()["assets"] if a["uid"] == "INT-1")
 
         # Logging an entry bumps the next maintenance date automatically.
         token = _csrf(client, "/entries/new")
@@ -425,9 +421,7 @@ def test_pipes_crud():
         # Deleting a pipe removes it.
         r = client.post(f"/api/pipes/{pipe['id']}/delete", data={"csrf_token": token})
         assert r.json()["ok"] is True
-        assert not any(
-            p["id"] == pipe["id"] for p in client.get("/api/pipes").json()["pipes"]
-        )
+        assert not any(p["id"] == pipe["id"] for p in client.get("/api/pipes").json()["pipes"])
 
         # Deleting an endpoint asset removes its pipes too.
         r = client.post(
@@ -490,7 +484,7 @@ def test_measurements_crud_and_filter():
 
         # Recent measurements show up on the dashboard with a link to the page.
         dash = client.get("/").text
-        assert "<strong style=\"color:var(--text)\">NH4</strong>" in dash
+        assert '<strong style="color:var(--text)">NH4</strong>' in dash
         assert 'href="/measurements"' in dash
 
         # Filter by parameter.
@@ -499,9 +493,7 @@ def test_measurements_crud_and_filter():
         assert "<strong>O2</strong>" not in filtered
 
         # Filter by date range (both measurements are on 2024-07-01).
-        filtered = client.get(
-            "/measurements?date_from=2024-07-01&date_to=2024-07-01"
-        ).text
+        filtered = client.get("/measurements?date_from=2024-07-01&date_to=2024-07-01").text
         assert "<strong>NH4</strong>" in filtered and "<strong>O2</strong>" in filtered
         filtered = client.get("/measurements?date_from=2024-07-02").text
         assert "<strong>NH4</strong>" not in filtered
@@ -513,7 +505,7 @@ def test_measurements_crud_and_filter():
         assert "<strong>NH4</strong>" not in filtered
 
         # Edit the first measurement.
-        mid = re.search(r'/measurements/(\d+)/edit', page).group(1)
+        mid = re.search(r"/measurements/(\d+)/edit", page).group(1)
         client.post(
             f"/measurements/{mid}/edit",
             data={
@@ -638,9 +630,7 @@ def test_plant_report_pdf():
             from sqlalchemy import select as sa_select
 
             events = list(
-                db.scalars(
-                    sa_select(AssetEvent).where(AssetEvent.asset_uid == "REP-1")
-                ).all()
+                db.scalars(sa_select(AssetEvent).where(AssetEvent.asset_uid == "REP-1")).all()
             )
             actions = {ev.action for ev in events}
             assert AssetEventAction.created in actions
@@ -742,7 +732,7 @@ def test_asset_images():
         page = client.get("/assets").text
         asset_id = re.search(r'/assets/(\d+)/edit"><strong>Shaft with photo', page).group(1)
         edit_page = client.get(f"/assets/{asset_id}/edit").text
-        m = re.search(r'/media/([a-f0-9]+\.png)', edit_page)
+        m = re.search(r"/media/([a-f0-9]+\.png)", edit_page)
         assert m, "uploaded image not shown on the edit form"
         assert client.get(f"/media/{m.group(1)}").status_code == 200
 
@@ -759,15 +749,15 @@ def test_asset_images():
             follow_redirects=False,
         )
         edit_page = client.get(f"/assets/{asset_id}/edit").text
-        assert len(re.findall(r'/media/[a-f0-9]+\.png', edit_page)) >= 2
+        assert len(re.findall(r"/media/[a-f0-9]+\.png", edit_page)) >= 2
 
-        img_id = re.search(r'/assets/image/(\d+)/delete', edit_page).group(1)
+        img_id = re.search(r"/assets/image/(\d+)/delete", edit_page).group(1)
         client.post(f"/assets/image/{img_id}/delete", data={"csrf_token": token})
         edit_page = client.get(f"/assets/{asset_id}/edit").text
         assert f"/assets/image/{img_id}/delete" not in edit_page
 
         # Deleting the asset removes the remaining image file from disk.
-        m = re.search(r'/media/([a-f0-9]+\.png)', edit_page)
+        m = re.search(r"/media/([a-f0-9]+\.png)", edit_page)
         remaining = m.group(1)
         client.post(f"/assets/{asset_id}/delete", data={"csrf_token": token})
         assert client.get(f"/media/{remaining}").status_code == 404
@@ -1105,9 +1095,7 @@ def test_threshold_input_is_validated():
         )
 
         # Clearing every field still removes the configuration.
-        r = _save_thresholds(
-            client, count="1", name_0="THRESH", unit_0="", min_0="", max_0=""
-        )
+        r = _save_thresholds(client, count="1", name_0="THRESH", unit_0="", min_0="", max_0="")
         assert r.status_code == 303
         assert "mg/l" not in client.get("/measurements?parameter=THRESH").text
 
@@ -1120,16 +1108,17 @@ def test_threshold_rejects_non_finite_and_keeps_precision():
         # inf/nan parse as floats but would disable the breach check and turn
         # the chart y-axis into NaN, so they are refused like any other typo.
         for junk in ("inf", "-inf", "nan", "1e400"):
-            r = _save_thresholds(
-                client, count="1", name_0="FINITE", min_0="0", max_0=junk
-            )
+            r = _save_thresholds(client, count="1", name_0="FINITE", min_0="0", max_0=junk)
             assert r.status_code == 400, junk
 
         # A precise threshold survives the round trip through the form; the old
         # %g formatting rounded it to 1.23457e+06 on the next save.
         assert (
             _save_thresholds(
-                client, count="1", name_0="FINITE", min_0="0.123456789",
+                client,
+                count="1",
+                name_0="FINITE",
+                min_0="0.123456789",
                 max_0="1234567.8",
             ).status_code
             == 303
@@ -1167,10 +1156,7 @@ def test_chart_keeps_its_scale_when_thresholds_are_far_out():
 
     from app.services.charts import line_chart_svg
 
-    points = [
-        (datetime(2024, 1, d, tzinfo=UTC), v)
-        for d, v in ((1, 6.9), (2, 7.05), (3, 7.2))
-    ]
+    points = [(datetime(2024, 1, d, tzinfo=UTC), v) for d, v in ((1, 6.9), (2, 7.05), (3, 7.2))]
     svg = line_chart_svg(points, "pH", unit="", lo=0.0, hi=14.0)
 
     # A pH band of 0..14 must not flatten readings of 6.9..7.2: the domain stays
@@ -1221,9 +1207,12 @@ def test_orphaned_threshold_stays_editable():
     with _client() as client:
         _login(client)
         _seed_measurement(client, parameter="GONE")
-        assert _save_thresholds(
-            client, count="1", name_0="GONE", unit_0="mg/l", min_0="0", max_0="10"
-        ).status_code == 303
+        assert (
+            _save_thresholds(
+                client, count="1", name_0="GONE", unit_0="mg/l", min_0="0", max_0="10"
+            ).status_code
+            == 303
+        )
 
         # Delete the only measurement carrying that parameter.
         import re
@@ -1381,6 +1370,23 @@ def test_tooltips_render_in_the_selected_language():
         page_en = client.get("/entries/new").text
         assert _catalog("en")["tip.entry.operating_hours"] in page_en
         assert _catalog("de")["tip.entry.operating_hours"] not in page_en
+
+
+def test_no_template_uses_a_native_title_tooltip():
+    """Every tooltip goes through the styled bubble, so the UI shows one kind.
+
+    `{% block title %}` is the page title, not a tooltip, and is exempt.
+    """
+    import pathlib
+    import re
+
+    tpl = pathlib.Path(__file__).resolve().parent.parent / "app" / "templates"
+    offenders = []
+    for path in tpl.rglob("*.html"):
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if re.search(r"\stitle=", line) and "block title" not in line:
+                offenders.append(f"{path.relative_to(tpl).as_posix()}:{number}")
+    assert not offenders, offenders
 
 
 def test_no_element_carries_both_title_and_data_tip():

@@ -25,6 +25,23 @@ pytest -q
 
 Tests use an isolated temporary SQLite database and do not touch your `data/`.
 
+### Browser tests (optional)
+
+`tests/test_tooltips_e2e.py` drives a real Chromium through Playwright to check
+what the HTML alone cannot show: that a tooltip actually becomes visible, is not
+clipped by the scrolling tables, flips below a trigger at the top edge, stays
+inside a narrow viewport, and is readable in both themes. It starts its own
+uvicorn on a free port against a throwaway database.
+
+Playwright is not in `requirements.txt`; without it the module skips itself, so
+a plain `pytest -q` stays green. To run it:
+
+```bash
+pip install playwright
+playwright install chromium
+pytest tests/test_tooltips_e2e.py
+```
+
 ## Project layout
 
 ```
