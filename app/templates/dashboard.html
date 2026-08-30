@@ -82,7 +82,8 @@
           <span>{{ mm.measured_at|dmy_hm }}</span>
           <span>· <strong style="color:var(--text)">{{ mm.parameter }}</strong>:
             <span{% if warn %} class="measure-warn"{% endif %}>{{ mm.value }}{% if cfg and cfg.unit %} {{ cfg.unit }}{% endif %}</span>
-            {% if warn %}<span title="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
+            {% if warn %}<span data-tip="{{ t('measure.out_of_range') }}"
+                  aria-label="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
           </span>
           {% if mm.temperature is not none %}<span>· 🌡 {{ mm.temperature }} °C</span>{% endif %}
           {% if mm.operating_hours is not none %}<span>· ⏱ {{ mm.operating_hours }} h</span>{% endif %}

@@ -46,7 +46,7 @@
      data-hint-label="{{ t('chart.readout_hint') }}">
   {% for name, svg in charts %}
   <div class="card chart-card zoomable" role="button" tabindex="0"
-       aria-label="{{ name }} — {{ t('chart.enlarge') }}" title="{{ t('chart.enlarge') }}">
+       aria-label="{{ name }} — {{ t('chart.enlarge') }}" data-tip="{{ t('chart.enlarge') }}">
     <h3 class="chart-title">{{ name }}</h3>
     {{ svg | safe }}
   </div>

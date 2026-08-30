@@ -75,7 +75,8 @@
         <td><strong>{{ m.parameter }}</strong></td>
         <td{% if warn %} class="measure-warn"{% endif %}>
           {% if m.value is not none %}{{ m.value }}{% if cfg and cfg.unit %} {{ cfg.unit }}{% endif %}{% else %}—{% endif %}
-          {% if warn %}<span class="badge badge-overdue" title="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
+          {% if warn %}<span class="badge badge-overdue" data-tip="{{ t('measure.out_of_range') }}"
+                aria-label="{{ t('measure.out_of_range') }}">⚠</span>{% endif %}
         </td>
         <td>{{ m.temperature if m.temperature is not none else '—' }}</td>
         <td>{{ m.operating_hours if m.operating_hours is not none else '—' }}</td>
