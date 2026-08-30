@@ -30,6 +30,17 @@ ok()   { echo -e "${c_green}[ok]${c_reset} $*"; }
 warn() { echo -e "${c_yellow}[warn]${c_reset} $*"; }
 die()  { echo -e "${c_red}[error]${c_reset} $*" >&2; exit 1; }
 
+# Read __version__ straight from the source file. The `app` package is never
+# pip-installed (install.sh only installs requirements.txt), so
+# `python -c "import app"` works solely from inside the app directory -- which
+# is why the systemd unit sets WorkingDirectory. Running it from root's shell
+# here failed silently and printed "Updated ? -> X".
+read_version() {
+  local init="$1/app/__init__.py" v=""
+  [[ -f "$init" ]] && v="$(awk -F'"' '/^__version__/ {print $2; exit}' "$init")"
+  printf '%s' "${v:-?}"
+}
+
 [[ $EUID -eq 0 ]] || die "Please run as root (sudo bash deploy/update.sh)."
 [[ -d "$APP_DIR" ]] || die "App directory ${APP_DIR} not found. Is the app installed?"
 [[ -x "${APP_DIR}/.venv/bin/pip" ]] || die "Virtualenv not found at ${APP_DIR}/.venv."
@@ -39,7 +50,7 @@ apt-get update -qq
 apt-get install -y --no-install-recommends git rsync ca-certificates >/dev/null
 
 # Record the currently installed version for the summary.
-OLD_VERSION="$("${APP_DIR}/.venv/bin/python" -c 'import app; print(app.__version__)' 2>/dev/null || echo '?')"
+OLD_VERSION="$(read_version "$APP_DIR")"
 
 # ---------------- Fetch the latest code ----------------
 CLONE_URL="$REPO_URL"
@@ -55,7 +66,7 @@ log "Cloning ${BRANCH} ..."
 if ! git clone --depth 1 --branch "$BRANCH" "$CLONE_URL" "$TMP_SRC" >/dev/null 2>&1; then
   die "git clone failed. Private repo? Pass GITHUB_TOKEN=... (or make it public)."
 fi
-NEW_VERSION="$(grep -oE '__version__ = "[^"]+"' "$TMP_SRC/app/__init__.py" | head -1 | cut -d'"' -f2 || echo '?')"
+NEW_VERSION="$(read_version "$TMP_SRC")"
 
 # ---------------- Snapshot the database ----------------
 DB_FILE="${APP_DIR}/data/app.db"
