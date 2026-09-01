@@ -1401,3 +1401,23 @@ def test_no_element_carries_both_title_and_data_tip():
             if "data-tip=" in tag and re.search(r"\stitle=", tag):
                 offenders.append((path.name, tag[:80]))
     assert not offenders, offenders
+
+
+def test_favicon_is_served_and_linked():
+    """Without these the browser tab falls back to its generic globe icon."""
+    with _client() as client:
+        # The login page already carries the links -- browsers fetch the icon
+        # before anyone is signed in.
+        login = client.get("/login").text
+        assert '<link rel="icon" href="/static/favicon.svg' in login
+        assert 'rel="apple-touch-icon"' in login
+
+        ico = client.get("/favicon.ico")
+        assert ico.status_code == 200
+        assert ico.headers["content-type"] == "image/x-icon"
+
+        svg = client.get("/static/favicon.svg")
+        assert svg.status_code == 200
+        assert "<svg" in svg.text
+
+        assert client.get("/static/apple-touch-icon.png").status_code == 200

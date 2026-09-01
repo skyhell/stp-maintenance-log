@@ -53,9 +53,10 @@ app/
   routers/        HTTP routes (auth, entries, assets, map, admin, account)
   services/       security, storage, i18n, activities, twofa, backup, report
   templates/      Jinja2 templates (+ HTMX/Alpine)
-  static/         CSS, JS, vendored libs (htmx, alpine, leaflet)
+  static/         CSS, JS, favicons, vendored libs (htmx, alpine, leaflet)
   i18n/           de.json, en.json
 deploy/           install.sh, systemd unit, nginx example
+tools/            one-off helpers (make_favicon.py)
 tests/            pytest smoke/integration tests
 ```
 

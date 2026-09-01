@@ -122,6 +122,12 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+# Browsers request /favicon.ico on their own, before any login.
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
+
+
 # --- Authenticated media (uploaded images) --------------------------------
 @app.get("/media/{filename}")
 def media(
