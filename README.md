@@ -65,8 +65,9 @@ no external CDN, no API keys.
 - **Contextual tooltips** — an ⓘ marker next to the form fields that need
   explaining, plus a tooltip on every action button and icon. They appear on
   hover, on keyboard focus and on tap, and follow the selected language.
-- **Apple-style UI** — clean, minimal, rounded, with a persistent **dark mode**
-  and a fully responsive layout (desktop, tablet, phone).
+- **Apple-style UI** — clean, minimal, rounded, with a persistent **dark mode**,
+  its own app icon in the browser tab and on the iOS home screen, and a fully
+  responsive layout (desktop, tablet, phone).
 
 ## 📸 Screenshots
 
@@ -286,7 +287,8 @@ Backup-Codes · Benutzerverwaltung mit Passwort-Bestätigung · **Anlagenbericht
 chronologischer Übersicht über Wartungen, Messwerte und Objektänderungen ·
 **Backup/Restore** als ZIP · zweisprachig **DE/EN** · **Tooltips** in der
 eingestellten Sprache an Formularfeldern und Aktions-Schaltflächen (Hover,
-Tastatur-Fokus und Tippen) · **Dark Mode** · responsives Apple-Stil-Design.
+Tastatur-Fokus und Tippen) · **Dark Mode** · eigenes **App-Icon** im
+Browser-Tab und auf dem iOS-Homescreen · responsives Apple-Stil-Design.
 
 **Installation auf Proxmox:**
 
